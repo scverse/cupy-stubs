@@ -1,0 +1,44 @@
+{
+  "template": "https://github.com/scverse/cookiecutter-scverse/",
+  "commit": "0bebb8fe6e96b2ae142e629a889a8ec8695412e0",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "project_name": "cupy-stubs",
+      "package_name": "cupy-stubs",
+      "project_description": "Type stubs for CuPy",
+      "author_full_name": "Phil A.",
+      "author_email": "philipp.angerer@scverse.org",
+      "github_user": "scverse",
+      "github_repo": "cupy-stubs",
+      "license": "Mozilla Public License Version 2.0",
+      "ide_integration": true,
+      "issue_categorization": "issue types",
+      "_copy_without_render": [
+        ".github/workflows/build.yaml",
+        ".github/workflows/test.yaml",
+        "docs/_templates/autosummary/**.rst"
+      ],
+      "_exclude_on_template_update": [
+        "CHANGELOG.md",
+        "LICENSE",
+        "README.md",
+        "docs/api.md",
+        "docs/index.md",
+        "docs/notebooks/example.ipynb",
+        "docs/references.bib",
+        "docs/references.md",
+        "src/**",
+        "tests/**"
+      ],
+      "_render_devdocs": false,
+      "_jinja2_env_vars": {
+        "lstrip_blocks": true,
+        "trim_blocks": true
+      },
+      "_template": "https://github.com/scverse/cookiecutter-scverse/",
+      "_commit": "0bebb8fe6e96b2ae142e629a889a8ec8695412e0"
+    }
+  },
+  "directory": null
+}
