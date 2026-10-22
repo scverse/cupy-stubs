@@ -4,9 +4,8 @@ from typing import Literal
 
 from numpy.typing import DTypeLike
 
-from ._core import ndarray
+from cupy._core import ndarray
 
-def broadcast_to(array: ndarray, shape: int | Sequence[int]) -> ndarray: ...
 def concatenate(
     tup: Sequence[ndarray],
     axis: int | None = 0,

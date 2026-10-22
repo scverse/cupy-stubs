@@ -25,7 +25,7 @@ classifiers = [
   "Programming Language :: Python :: 3.15",
   "Typing :: Typed",
 ]
-dependencies = []
+dependencies = [ "scipy-stubs" ]
 # https://docs.pypi.org/project_metadata/#project-urls
 urls.Documentation = "https://github.com/scverse/cupy-stubs#readme"
 urls.Homepage = "https://github.com/scverse/cupy-stubs"
@@ -37,11 +37,13 @@ test = [
   "cupy",
   "h5py",
   "pytest",
-  "pytest-cov",     # For VS Code’s coverage functionality
+  # For VS Code’s coverage functionality
+  "pytest-cov",
   "scipy",
+  "typing-extensions; python_version<'3.11'", # `assert_type`
   "zarr",
 ]
-typecheck = [ "mypy", "scipy-stubs" ]
+typecheck = [ "mypy" ]
 
 [tool.hatch]
 build.targets.wheel.packages = [ "src/cupy-stubs", "src/cupyx-stubs" ]
@@ -56,9 +58,9 @@ envs.hatch-check-types.scripts.check = [ "mypy" ]
 envs.hatch-check-types.dependency-groups = [ "typecheck", "test" ]
 envs.hatch-test.matrix = [
   # Test the lowest and highest supported Python versions with normal deps
-  { deps = [ "stable" ], python = [ "3.10", "3.15" ] },
+  { deps = [ "stable" ], python = [ "3.10", "3.14" ] },
   # Test the newest supported Python version also with pre-release deps
-  { deps = [ "pre" ], python = [ "3.15" ] },
+  { deps = [ "pre" ], python = [ "3.14" ] },
 ]
 # If the matrix variable `deps` is set to "pre",
 # set the environment variable `UV_PRERELEASE` to "allow".
@@ -100,18 +102,46 @@ lint.ignore = [
   "E731", # Do not assign a lambda expression, use a def -> lambda expression assignments are convenient
   "E741", # allow I, O, l as variable names -> I is the identity matrix
 ]
+lint.per-file-ignores."*.pyi" = [ "UP035" ]  # `typing.Self` etc. resolve to `Any` for users on older Pythons
 lint.per-file-ignores."tests/*" = [ "D" ]
 lint.flake8-copyright.notice-rgx = "SPDX-License-Identifier: MPL-2\\.0"
 lint.isort.known-first-party = [ "cupy", "cupyx" ]
 lint.pydocstyle.convention = "numpy"
+per-file-target-version."*.pyi" = "py313"  # type checkers parse stubs with the newest syntax
 
 [tool.mypy]
 files = [ "src", "tests" ]
+disallow_any_unimported = true
+disallow_any_decorated = true
+disallow_any_explicit = true
+untyped_calls_exclude = [ "h5py" ]
+warn_unreachable = true
+enable_error_code = [
+  "deprecated",
+  "exhaustive-match",
+  "explicit-override",
+  "ignore-without-code",
+  "mutable-override",
+  "possibly-undefined",
+  "redundant-expr",
+  "redundant-self",
+  "truthy-bool",
+  "truthy-iterable",
+  "unimported-reveal",
+  "unused-awaitable",
+]
+strict = true
+overrides = [ { module = [ "h5py", "h5py.*" ], follow_untyped_imports = true, implicit_reexport = true } ]
+
+[tool.ty]
+# stubs use 3.13 syntax (ty has no per-file version), and `requires-python` would make it assume 3.10
+environment.python-version = "3.13"
 
 [tool.pytest]
 addopts = [
   "--import-mode=importlib", # allow using test files with same name
 ]
+filterwarnings = [ "error" ]
 strict = true
 testpaths = [ "tests" ]
 

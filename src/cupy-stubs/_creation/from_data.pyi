@@ -1,17 +1,19 @@
 # SPDX-License-Identifier: MPL-2.0
-from typing import Any, Literal
+from typing import Literal
 
 import h5py
 import zarr
 from numpy.typing import ArrayLike, DTypeLike
+from zarr.core.metadata import ArrayV2Metadata, ArrayV3Metadata
 
 from cupy._core import ndarray
 
 def asarray(
-    a: ArrayLike | h5py.Dataset | zarr.Array[Any],
+    a: ArrayLike | h5py.Dataset | zarr.Array[ArrayV2Metadata] | zarr.Array[ArrayV3Metadata],
     dtype: DTypeLike | None = None,
     order: Literal["C", "F", "A", "K"] | None = None,
     *,
+    copy: bool | None = None,
     blocking: bool = False,
 ) -> ndarray: ...
 def array(
