@@ -31,7 +31,7 @@ repos:
         entry: hatch check types
         language: system
         types: [python]
-        files: ^(src|tests)/
+        files: ^(ci|src|tests)/
         require_serial: true
         pass_filenames: false
         groups: [typecheck]

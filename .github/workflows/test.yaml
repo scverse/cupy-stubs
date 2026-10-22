@@ -47,14 +47,9 @@ jobs:
         run: nvidia-smi
       - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
         with:
-          python-version: "3.14" # creates and activates a venv
           enable-cache: true # "auto" is `false` on non-GitHub runners
-      - name: Install package
-        run: uv pip install --group=test -e . cupy-cuda13x --extra-index-url=https://pypi.nvidia.com --index-strategy=unsafe-best-match
-      - name: List installed packages
-        run: uv pip list
-      - name: Run tests
-        run: pytest
+      - name: Run tests in all hatch environments
+        run: uvx hatch test --all # `ci/install-cupy.py` picks `cupy-cuda13x` here
 
   # so the next push to the PR doesn’t trigger another expensive run
   remove-label:

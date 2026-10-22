@@ -32,7 +32,7 @@ urls.Homepage = "https://github.com/scverse/cupy-stubs"
 urls.Source = "https://github.com/scverse/cupy-stubs"
 
 [dependency-groups]
-# without `cupy`, which needs a matching GPU platform package (e.g. `cupy-cuda13x` in CI)
+# without `cupy`: `hatch test` installs the right GPU platform package via `ci/install-cupy.py`
 test = [
   "h5py",
   "pytest",
@@ -44,7 +44,7 @@ typecheck = [ "mypy" ]
 
 [tool.hatch]
 build.targets.wheel.packages = [ "src/cupy-stubs", "src/cupyx-stubs" ]
-build.targets.sdist.exclude = [ "/docs", "/tests" ]
+build.targets.sdist.exclude = [ "/ci", "/docs", "/tests" ]
 envs.hatch-check-code.dependencies = [ "prek" ]
 envs.hatch-check-code.scripts.lint-check = "echo 'try `hatch check code --fix`'; false"
 envs.hatch-check-code.scripts.lint-fix = "prek run -a --no-group=format --no-group=typecheck"
@@ -53,8 +53,7 @@ envs.hatch-check-fmt.scripts.format-check = "echo 'try `hatch check fmt --fix`';
 envs.hatch-check-fmt.scripts.format-fix = "prek run -a --group=format --no-group=typecheck"
 envs.hatch-check-types.scripts.check = [ "mypy" ]
 envs.hatch-check-types.dependency-groups = [ "typecheck", "test" ]
-# a `cupy` wheel for your platform needs to be findable, e.g. via `UV_FIND_LINKS`
-envs.hatch-test.extra-dependencies = [ "cupy" ]
+envs.hatch-test.post-install-commands = [ "python ci/install-cupy.py" ]
 envs.hatch-test.matrix = [
   # Test the lowest and highest supported Python versions with normal deps
   { deps = [ "stable" ], python = [ "3.10", "3.14" ] },
@@ -109,7 +108,7 @@ lint.pydocstyle.convention = "numpy"
 per-file-target-version."*.pyi" = "py313"  # type checkers parse stubs with the newest syntax
 
 [tool.mypy]
-files = [ "src", "tests" ]
+files = [ "ci", "src", "tests" ]
 disallow_any_unimported = true
 disallow_any_decorated = true
 disallow_any_explicit = true
