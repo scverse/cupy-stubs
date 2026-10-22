@@ -1,13 +1,12 @@
 [build-system]
 build-backend = "hatchling.build"
-requires = [ "hatchling" ]
+requires = [ "hatch-vcs", "hatchling" ]
 
 [project]
 name = "cupy-stubs"
-version = "0.0.1"
 description = "Type stubs for CuPy"
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "MPL-2.0"
 maintainers = [
   { name = "Phil A.", email = "philipp.angerer@scverse.org" },
 ]
@@ -25,6 +24,7 @@ classifiers = [
   "Programming Language :: Python :: 3.15",
   "Typing :: Typed",
 ]
+dynamic = [ "version" ]
 dependencies = [ "scipy-stubs" ]
 # https://docs.pypi.org/project_metadata/#project-urls
 urls.Documentation = "https://github.com/scverse/cupy-stubs#readme"
@@ -32,13 +32,10 @@ urls.Homepage = "https://github.com/scverse/cupy-stubs"
 urls.Source = "https://github.com/scverse/cupy-stubs"
 
 [dependency-groups]
+# without `cupy`: `hatch test` installs the right GPU platform package via `ci/install-cupy.py`
 test = [
-  "coverage>=7.10",
-  "cupy",
   "h5py",
   "pytest",
-  # For VS Code’s coverage functionality
-  "pytest-cov",
   "scipy",
   "typing-extensions; python_version<'3.11'", # `assert_type`
   "zarr",
@@ -46,8 +43,9 @@ test = [
 typecheck = [ "mypy" ]
 
 [tool.hatch]
+version.source = "vcs"
 build.targets.wheel.packages = [ "src/cupy-stubs", "src/cupyx-stubs" ]
-build.targets.sdist.exclude = [ "/docs", "/tests" ]
+build.targets.sdist.exclude = [ "/ci", "/docs", "/tests" ]
 envs.hatch-check-code.dependencies = [ "prek" ]
 envs.hatch-check-code.scripts.lint-check = "echo 'try `hatch check code --fix`'; false"
 envs.hatch-check-code.scripts.lint-fix = "prek run -a --no-group=format --no-group=typecheck"
@@ -56,6 +54,7 @@ envs.hatch-check-fmt.scripts.format-check = "echo 'try `hatch check fmt --fix`';
 envs.hatch-check-fmt.scripts.format-fix = "prek run -a --group=format --no-group=typecheck"
 envs.hatch-check-types.scripts.check = [ "mypy" ]
 envs.hatch-check-types.dependency-groups = [ "typecheck", "test" ]
+envs.hatch-test.post-install-commands = [ "python ci/install-cupy.py" ]
 envs.hatch-test.matrix = [
   # Test the lowest and highest supported Python versions with normal deps
   { deps = [ "stable" ], python = [ "3.10", "3.14" ] },
@@ -110,7 +109,7 @@ lint.pydocstyle.convention = "numpy"
 per-file-target-version."*.pyi" = "py313"  # type checkers parse stubs with the newest syntax
 
 [tool.mypy]
-files = [ "src", "tests" ]
+files = [ "ci", "src", "tests" ]
 disallow_any_unimported = true
 disallow_any_decorated = true
 disallow_any_explicit = true
@@ -144,12 +143,6 @@ addopts = [
 filterwarnings = [ "error" ]
 strict = true
 testpaths = [ "tests" ]
-
-[tool.coverage]
-run.omit = [
-  "**/test_*.py",
-]
-run.patch = [ "subprocess" ]
 
 [tool.cruft]
 skip = [ ".git", "tests", "docs", "src" ]

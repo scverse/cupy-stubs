@@ -53,7 +53,9 @@ def test_init(dense: cp.ndarray, csr: cps.csr_matrix) -> None:
     from_parts = cps.csr_matrix((csr.data, csr.indices, csr.indptr), shape=(2, 3), maxprint=10)
     assert from_parts.shape == (2, 3)
     row, col = cp.asarray([0, 1]), cp.asarray([0, 1])
-    from_coo = cps.coo_matrix((cp.asarray([1.0, 2.0]), (row, col)), shape=(2, 3), dtype=np.float32, copy=False, maxprint=10)
+    from_coo = cps.coo_matrix(
+        (cp.asarray([1.0, 2.0]), (row, col)), shape=(2, 3), dtype=np.float32, copy=False, maxprint=10
+    )
     assert from_coo.shape == (2, 3)
 
 
@@ -125,16 +127,17 @@ def test_array_function(csr: cps.csr_matrix) -> None:
     assert np.sum(csr) == 6  # dispatched to `csr_matrix.sum`
 
 
+# scipy’s classes are only subscriptable at runtime in newer versions
 def test_get(coo: cps.coo_matrix, csr: cps.csr_matrix, csc: cps.csc_matrix) -> None:
     stream = cupy.cuda.Stream()
     m: cps.spmatrix = coo
-    assert_type(m.get(stream), sps.spmatrix[SpScalar])
+    assert_type(m.get(stream), "sps.spmatrix[SpScalar]")
     assert isinstance(m.get(stream), sps.spmatrix)
-    assert_type(coo.get(stream=stream), sps.coo_matrix[SpScalar])
+    assert_type(coo.get(stream=stream), "sps.coo_matrix[SpScalar]")
     assert isinstance(coo.get(stream=stream), sps.coo_matrix)
-    assert_type(csr.get(stream=stream), sps.csr_matrix[SpScalar])
+    assert_type(csr.get(stream=stream), "sps.csr_matrix[SpScalar]")
     assert isinstance(csr.get(stream=stream), sps.csr_matrix)
-    assert_type(csc.get(stream=stream), sps.csc_matrix[SpScalar])
+    assert_type(csc.get(stream=stream), "sps.csc_matrix[SpScalar]")
     assert isinstance(csc.get(stream=stream), sps.csc_matrix)
 
 
