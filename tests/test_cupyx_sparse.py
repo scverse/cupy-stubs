@@ -62,7 +62,7 @@ def test_init(dense: cp.ndarray, csr: cps.csr_matrix) -> None:
 def test_spmatrix_attrs(coo: cps.coo_matrix) -> None:
     m: cps.spmatrix = coo
     assert isinstance(m, cps.spmatrix)
-    assert_type(m.dtype, np.dtype[Scalar])
+    assert_type(m.dtype, np.dtype[SpScalar])
     assert m.dtype == np.float32
     assert_type(m.shape, tuple[int, int])
     assert m.shape == (2, 3)
@@ -77,14 +77,16 @@ def test_formats(csr: cps.csr_matrix, csc: cps.csc_matrix, coo: cps.coo_matrix) 
 
 
 def test_compressed_attrs(csr: cps.csr_matrix) -> None:
-    for arr in (csr.data, csr.indices, csr.indptr):
+    assert_type(csr.data, cp.ndarray[tuple[int], np.dtype[SpScalar]])
+    assert isinstance(csr.data, cp.ndarray)
+    for arr in (csr.indices, csr.indptr):
         assert_type(arr, cp.ndarray[tuple[int], np.dtype[Scalar]])
         assert isinstance(arr, cp.ndarray)
 
 
 def test_toarray(coo: cps.coo_matrix) -> None:
     x = coo.toarray(order="F", out=None)
-    assert_type(x, cp.ndarray[tuple[int, int], np.dtype[Scalar]])
+    assert_type(x, cp.ndarray[tuple[int, int], np.dtype[SpScalar]])
     assert isinstance(x, cp.ndarray)
 
 
@@ -143,7 +145,7 @@ def test_get(coo: cps.coo_matrix, csr: cps.csr_matrix, csc: cps.csc_matrix) -> N
 
 def test_getitem(csr: cps.csr_matrix) -> None:
     x = csr[0, 2]
-    assert_type(x, cp.ndarray[tuple[()], np.dtype[Scalar]])
+    assert_type(x, cp.ndarray[tuple[()], np.dtype[SpScalar]])
     assert isinstance(x, cp.ndarray)
     assert x.ndim == 0
     for key in (0, slice(None), [0, 1], [True, False], cp.asarray([0]), np.array([0])):
@@ -163,14 +165,26 @@ def test_setitem(csr: cps.csr_matrix) -> None:
 
 def test_astype(csr: cps.csr_matrix) -> None:
     x = csr.astype(np.float64, copy=False)
-    assert_type(x, cps.csr_matrix)
+    assert_type(x, "cps.csr_matrix[np.float64]")
     assert x.dtype == np.float64
+    y = csr.astype(np.dtype(np.float32))
+    assert_type(y, "cps.csr_matrix[np.float32]")
+    assert_type(y.dtype, np.dtype[np.float32])
+    assert_type(y.data, cp.ndarray[tuple[int], np.dtype[np.float32]])
+    assert_type(y[0, 0], cp.ndarray[tuple[()], np.dtype[np.float32]])
+    assert_type(y.tocsc(), "cps.csc_matrix[np.float32]")
+    assert_type(y.get(), "sps.csr_matrix[np.float32]")
+    assert_type(y.copy(), "cps.csr_matrix[np.float32]")
+    m: cps.spmatrix = y  # covariant
+    assert isinstance(m, cps.csr_matrix)
+    assert_type(csr.astype("float64"), cps.csr_matrix)
 
 
 def test_power(csc: cps.csc_matrix) -> None:
     x = csc.power(2, dtype=np.float64)
-    assert_type(x, cps.csc_matrix)
+    assert_type(x, "cps.csc_matrix[np.float64]")
     assert isinstance(x, cps.csc_matrix)
+    assert_type(csc.power(2), cps.csc_matrix)
 
 
 def test_sum(csr: cps.csr_matrix) -> None:

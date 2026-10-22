@@ -9,7 +9,7 @@ import cupy.cuda
 
 from ._base import _SpScalar, _ToSparse, spmatrix
 
-class coo_matrix(spmatrix):
+class coo_matrix[ScalarT: _SpScalar = _SpScalar](spmatrix[ScalarT]):
     def __init__(
         self,
         arg1: _ToSparse,
@@ -22,4 +22,4 @@ class coo_matrix(spmatrix):
     @property
     def format(self) -> Literal["coo"]: ...
     @override
-    def get(self, stream: cupy.cuda.Stream | None = None) -> sps.coo_matrix[_SpScalar]: ...
+    def get(self, stream: cupy.cuda.Stream | None = None) -> sps.coo_matrix[ScalarT]: ...
