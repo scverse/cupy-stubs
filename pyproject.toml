@@ -7,7 +7,7 @@ name = "cupy-stubs"
 version = "0.0.1"
 description = "Type stubs for CuPy"
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "MPL-2.0"
 maintainers = [
   { name = "Phil A.", email = "philipp.angerer@scverse.org" },
 ]
