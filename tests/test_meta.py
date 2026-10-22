@@ -88,7 +88,11 @@ def _stub_params(f: ast.FunctionDef) -> list[P]:
 STUBS = {_module_name(path): ast.parse(path.read_text()) for path in SRC.glob("*-stubs/**/*.pyi")}
 MEMBERS = sorted((m for mod, tree in STUBS.items() for m in _members(tree.body, mod)), key=lambda m: m.id)
 BASES = {
-    node.name: {b.id for b in node.bases if isinstance(b, ast.Name)}
+    node.name: {
+        n.id
+        for b in node.bases
+        if isinstance(n := b.value if isinstance(b, ast.Subscript) else b, ast.Name)  # `Base[T]` → `Base`
+    }
     for tree in STUBS.values()
     for node in ast.walk(tree)
     if isinstance(node, ast.ClassDef)
