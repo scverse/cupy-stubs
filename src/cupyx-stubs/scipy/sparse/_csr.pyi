@@ -7,8 +7,8 @@ from typing_extensions import Self, override
 
 import cupy.cuda
 
-from ._base import _SpScalar, spmatrix
-from ._compressed import _compressed_sparse_matrix, _ToDType
+from ._base import _SpScalar, _ToDType, spmatrix
+from ._compressed import _compressed_sparse_matrix
 
 class csr_matrix[ScalarT: _SpScalar = _SpScalar](spmatrix[ScalarT], _compressed_sparse_matrix[ScalarT]):
     @property

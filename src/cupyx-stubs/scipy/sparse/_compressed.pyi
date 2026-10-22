@@ -8,18 +8,37 @@ from typing_extensions import Self
 from cupy import ndarray
 from cupy._core.core import _Integer, _NDArray, _Slice
 
-from ._base import _spbase, _SpScalar, _ToSparse
+from ._base import _spbase, _SpScalar, _ToDType, _ToSparse, _ToSparseOf
 
 # `list`, not `Sequence`: a `tuple` means one index per axis
 type _NonIntIndex = _Slice | list[int] | list[bool] | ndarray | _NDArray[_Integer | np.bool]
 type _Index = int | _NonIntIndex
-# `dtype` arguments that determine the scalar type
-type _ToDType[ScalarT: _SpScalar] = type[ScalarT] | np.dtype[ScalarT]
 
 class _compressed_sparse_matrix[ScalarT: _SpScalar = _SpScalar](_spbase[ScalarT]):
     indices: ndarray[tuple[int]]
     indptr: ndarray[tuple[int]]
 
+    @overload  # keyword `dtype` determines the scalar type
+    def __init__(
+        self,
+        arg1: _ToSparse | tuple[ndarray, ndarray, ndarray],
+        shape: tuple[int, int] | None = None,
+        *,
+        dtype: _ToDType[ScalarT],
+        copy: bool = False,
+        maxprint: int | None = None,
+    ) -> None: ...
+    @overload  # without `dtype`, `arg1` determines the scalar type
+    def __init__(
+        self,
+        arg1: _ToSparseOf[ScalarT] | tuple[ndarray[tuple[int], np.dtype[ScalarT]], ndarray, ndarray],
+        shape: tuple[int, int] | None = None,
+        dtype: None = None,
+        copy: bool = False,
+        *,
+        maxprint: int | None = None,
+    ) -> None: ...
+    @overload
     def __init__(
         self,
         arg1: _ToSparse | tuple[ndarray, ndarray, ndarray],

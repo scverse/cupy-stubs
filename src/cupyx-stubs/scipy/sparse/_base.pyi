@@ -23,6 +23,16 @@ type _ToSparse = (
     | tuple[int, int]
     | tuple[ndarray, tuple[ndarray, ndarray]]
 )
+# constructor inputs all sparse formats accept, which determine the scalar type
+type _ToSparseOf[ScalarT: _SpScalar] = (
+    ndarray[tuple[int, int], np.dtype[ScalarT]]
+    | _spbase[ScalarT]
+    | sps.spmatrix[ScalarT]
+    | sps.sparray[ScalarT, tuple[int, int]]
+    | tuple[ndarray[tuple[int], np.dtype[ScalarT]], tuple[ndarray, ndarray]]
+)
+# `dtype` arguments that determine the scalar type
+type _ToDType[ScalarT: _SpScalar] = type[ScalarT] | np.dtype[ScalarT]
 
 class _spbase[ScalarT: _SpScalar = _SpScalar]:
     shape: tuple[int, int]
@@ -35,6 +45,7 @@ class _spbase[ScalarT: _SpScalar = _SpScalar]:
     def copy(self) -> Self: ...
     def tocsr(self, copy: bool = False) -> csr_matrix[ScalarT]: ...
     def tocsc(self, copy: bool = False) -> csc_matrix[ScalarT]: ...
+    # TODO: overloads to infer the result scalar type (promotion of both operands’ scalar types)
     def __matmul__(self, other: _spbase) -> csr_matrix: ...  # sparse @ sparse is always CSR
     # Doesn’t exist at runtime, but makes this `ArrayLike`,
     # so e.g. `np.sum(mat)` type checks, which works because `numpy` falls back to calling `mat.sum()`.

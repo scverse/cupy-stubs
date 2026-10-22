@@ -59,6 +59,21 @@ def test_init(dense: cp.ndarray, csr: cps.csr_matrix) -> None:
     assert from_coo.shape == (2, 3)
 
 
+def test_init_scalar_type(dense: cp.ndarray, csr: cps.csr_matrix) -> None:
+    assert_type(cps.csr_matrix(dense), cps.csr_matrix)  # unknown input scalar type
+    assert_type(cps.csr_matrix(dense, dtype=np.float64), "cps.csr_matrix[np.float64]")
+    assert_type(cps.coo_matrix((2, 3), dtype=np.dtype(np.complex64)), "cps.coo_matrix[np.complex64]")
+    assert_type(cps.csc_matrix(dense, None, np.float64), cps.csc_matrix)  # positional `dtype` isn’t inferred
+    f32 = csr.astype(np.float32)
+    assert_type(cps.csc_matrix(f32), "cps.csc_matrix[np.float32]")
+    assert_type(cps.coo_matrix(f32), "cps.coo_matrix[np.float32]")
+    assert_type(cps.csr_matrix(f32.get()), "cps.csr_matrix[np.float32]")
+    assert_type(cps.csr_matrix(f32.toarray()), "cps.csr_matrix[np.float32]")
+    from_parts = cps.csr_matrix((f32.data, f32.indices, f32.indptr), shape=(2, 3))
+    assert_type(from_parts, "cps.csr_matrix[np.float32]")
+    assert from_parts.dtype == np.float32
+
+
 def test_spmatrix_attrs(coo: cps.coo_matrix) -> None:
     m: cps.spmatrix = coo
     assert isinstance(m, cps.spmatrix)
