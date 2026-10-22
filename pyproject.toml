@@ -32,13 +32,10 @@ urls.Homepage = "https://github.com/scverse/cupy-stubs"
 urls.Source = "https://github.com/scverse/cupy-stubs"
 
 [dependency-groups]
+# without `cupy`, which needs a matching GPU platform package (e.g. `cupy-cuda13x` in CI)
 test = [
-  "coverage>=7.10",
-  "cupy",
   "h5py",
   "pytest",
-  # For VS Code’s coverage functionality
-  "pytest-cov",
   "scipy",
   "typing-extensions; python_version<'3.11'", # `assert_type`
   "zarr",
@@ -56,6 +53,8 @@ envs.hatch-check-fmt.scripts.format-check = "echo 'try `hatch check fmt --fix`';
 envs.hatch-check-fmt.scripts.format-fix = "prek run -a --group=format --no-group=typecheck"
 envs.hatch-check-types.scripts.check = [ "mypy" ]
 envs.hatch-check-types.dependency-groups = [ "typecheck", "test" ]
+# a `cupy` wheel for your platform needs to be findable, e.g. via `UV_FIND_LINKS`
+envs.hatch-test.extra-dependencies = [ "cupy" ]
 envs.hatch-test.matrix = [
   # Test the lowest and highest supported Python versions with normal deps
   { deps = [ "stable" ], python = [ "3.10", "3.14" ] },
@@ -144,12 +143,6 @@ addopts = [
 filterwarnings = [ "error" ]
 strict = true
 testpaths = [ "tests" ]
-
-[tool.coverage]
-run.omit = [
-  "**/test_*.py",
-]
-run.patch = [ "subprocess" ]
 
 [tool.cruft]
 skip = [ ".git", "tests", "docs", "src" ]

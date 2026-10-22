@@ -53,7 +53,9 @@ def test_init(dense: cp.ndarray, csr: cps.csr_matrix) -> None:
     from_parts = cps.csr_matrix((csr.data, csr.indices, csr.indptr), shape=(2, 3), maxprint=10)
     assert from_parts.shape == (2, 3)
     row, col = cp.asarray([0, 1]), cp.asarray([0, 1])
-    from_coo = cps.coo_matrix((cp.asarray([1.0, 2.0]), (row, col)), shape=(2, 3), dtype=np.float32, copy=False, maxprint=10)
+    from_coo = cps.coo_matrix(
+        (cp.asarray([1.0, 2.0]), (row, col)), shape=(2, 3), dtype=np.float32, copy=False, maxprint=10
+    )
     assert from_coo.shape == (2, 3)
 
 
