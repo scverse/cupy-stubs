@@ -12,3 +12,8 @@ def full(
     dtype: DTypeLike | None = None,
     order: Literal["C", "F"] = "C",
 ) -> ndarray: ...
+def ones(
+    shape: int | Sequence[int],
+    dtype: DTypeLike | None = float,
+    order: Literal["C", "F"] = "C",
+) -> ndarray: ...

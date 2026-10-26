@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: MPL-2.0
+from numpy import result_type as result_type
+
 from ._core import ndarray as ndarray
 from ._creation.basic import full as full
+from ._creation.basic import ones as ones
 from ._creation.from_data import array as array
 from ._creation.from_data import asarray as asarray
 from ._logic.comparison import array_equal as array_equal
