@@ -185,6 +185,19 @@ def test_full() -> None:
     assert isinstance(y, cp.ndarray)
 
 
+def test_ones() -> None:
+    x = cp.ones((2, 3), dtype=np.float32, order="F")
+    assert_type(x, cp.ndarray)
+    assert isinstance(x, cp.ndarray)
+    assert isinstance(cp.ones(3), cp.ndarray)
+
+
+def test_result_type(a: cp.ndarray) -> None:
+    dt = cp.result_type(a.dtype, np.int64)
+    assert_type(dt, np.dtype)
+    assert dt == np.float64
+
+
 def test_asarray() -> None:
     x = cp.asarray([1, 2], dtype=np.int64, order="C", copy=True, blocking=True)
     assert_type(x, cp.ndarray)
