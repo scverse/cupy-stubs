@@ -25,10 +25,6 @@ See the [GitHub releases][].
 For questions and help requests, you can reach out in the [scverse discourse][].
 If you found a bug, please use the [issue tracker][].
 
-## Citation
-
-> t.b.a
-
 [uv]: https://github.com/astral-sh/uv
 [scverse discourse]: https://discourse.scverse.org/
 [issue tracker]: https://github.com/scverse/cupy-stubs/issues
