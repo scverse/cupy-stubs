@@ -2,9 +2,11 @@
 from typing import Literal
 
 from numpy.typing import DTypeLike
+from typing_extensions import disjoint_base
 
 from .core import _Scalar, ndarray
 
+@disjoint_base
 class ufunc:
     @property
     def nin(self) -> int: ...

@@ -1,10 +1,13 @@
 # SPDX-License-Identifier: MPL-2.0
+from typing_extensions import disjoint_base
+
 class _BaseStream:
     ptr: int
 
 class Stream(_BaseStream): ...
 class MemoryPointer: ...
 
+@disjoint_base
 class Device:
     def __init__(self, device: int | None = None) -> None: ...
     @property
