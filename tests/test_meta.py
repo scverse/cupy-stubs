@@ -209,7 +209,6 @@ _BUILTINS = {
     "int": "__int__",
     "float": "__float__",
 }
-# module-level instances of stub classes, e.g. ufuncs, are used via `__call__`
 _CALLABLE_INSTANCES = {
     node.target.id
     for tree in STUBS.values()
@@ -240,7 +239,7 @@ class Usage:
         match node:
             case ast.Name(id=name) | ast.Attribute(attr=name):
                 self.names.add(name)
-            case ast.BinOp(left=ast.Constant(), op=op) if type(op) in _OPERATORS:  # `1 + a` calls `a.__radd__`
+            case ast.BinOp(left=ast.Constant(), op=op) if type(op) in _OPERATORS:
                 self.dunders.add(_reflected(_OPERATORS[type(op)]))
             case ast.BinOp(op=op) | ast.Compare(ops=[op, *_]) if type(op) in _OPERATORS:
                 self.dunders.add(_OPERATORS[type(op)])

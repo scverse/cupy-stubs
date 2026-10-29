@@ -242,7 +242,7 @@ def test_full() -> None:
     y = cp.full(3, cp.asarray(2))
     assert_type(y, cp.ndarray)
     assert isinstance(y, cp.ndarray)
-    assert_type(cp.full(3, 1, dtype="int32"), cp.ndarray)  # string `dtype` isn’t inferred
+    assert_type(cp.full(3, 1, dtype="int32"), cp.ndarray)
 
 
 def test_ones() -> None:

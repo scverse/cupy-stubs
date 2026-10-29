@@ -8,7 +8,6 @@ from numpy.typing import ArrayLike, DTypeLike
 from cupy._core import ndarray
 from cupy._core.core import _Scalar, _Shape
 
-# `dtype` arguments that determine the scalar type
 type _ToDType[ScalarT: _Scalar] = type[ScalarT] | np.dtype[ScalarT]
 
 @overload

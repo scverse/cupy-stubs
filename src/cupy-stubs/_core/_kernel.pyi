@@ -11,7 +11,6 @@ class ufunc:
     @property
     def nout(self) -> int: ...
 
-# like `numpy`’s stubs, one class per number of inputs and outputs
 class _UFunc_Nin1_Nout1(ufunc):
     def __call__(
         self,
