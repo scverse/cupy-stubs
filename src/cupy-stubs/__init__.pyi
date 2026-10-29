@@ -45,8 +45,10 @@ from ._math.sumprod import diff as diff
 from ._sorting.search import flatnonzero as flatnonzero
 from ._sorting.search import nonzero as nonzero
 from ._sorting.search import searchsorted as searchsorted
+from ._sorting.search import where as where
 from ._sorting.sort import argsort as argsort
 from ._sorting.sort import lexsort as lexsort
+from ._statistics.histogram import bincount as bincount
 from .cuda import Stream
 
 @overload

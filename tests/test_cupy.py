@@ -106,6 +106,9 @@ def test_ndarray_dunders(a: cp.ndarray) -> None:
     assert int(a[0, 1]) == 1
     assert_type(float(a[0, 1]), float)
     assert float(a[0, 1]) == 1.0
+    i = a.astype(np.int64)
+    assert_type(~i, cp.ndarray)
+    assert (~i).dtype == np.int64
 
 
 def test_ndarray_comparisons(a: cp.ndarray) -> None:
@@ -440,6 +443,21 @@ def test_nonzero(a: cp.ndarray) -> None:
     rows, cols = cp.nonzero(a)
     assert_type(cp.nonzero(a), tuple[cp.ndarray[tuple[int], np.dtype[Scalar]], ...])
     assert rows.shape == cols.shape == (5,)
+
+
+def test_where(a: cp.ndarray) -> None:
+    rows, cols = cp.where(a > 1, x=None, y=None)
+    assert_type(cp.where(a > 1), tuple[cp.ndarray[tuple[int], np.dtype[Scalar]], ...])
+    assert rows.shape == cols.shape == (4,)
+    x = cp.where(a > 1, a, 0)
+    assert_type(x, cp.ndarray)
+    assert x.shape == (2, 3)
+
+
+def test_bincount() -> None:
+    x = cp.bincount(cp.asarray([0, 1, 1]), weights=cp.asarray([1.0, 2.0, 3.0]), minlength=4)
+    assert_type(x, cp.ndarray[tuple[int], np.dtype[Scalar]])
+    assert x.get().tolist() == [1.0, 5.0, 0.0, 0.0]
 
 
 def test_default_rng() -> None:

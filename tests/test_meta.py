@@ -244,6 +244,8 @@ class Usage:
                 self.dunders.add(_reflected(_OPERATORS[type(op)]))
             case ast.BinOp(op=op) | ast.Compare(ops=[op, *_]) if type(op) in _OPERATORS:
                 self.dunders.add(_OPERATORS[type(op)])
+            case ast.UnaryOp(op=ast.Invert()):
+                self.dunders.add("__invert__")
             case ast.Subscript(ctx=ctx):
                 self.dunders.add("__setitem__" if isinstance(ctx, ast.Store) else "__getitem__")
             case ast.For():
@@ -294,7 +296,7 @@ def test_covered(member: Member, usage: Usage) -> None:
         assert calls, f"{member.cls} is never instantiated"
     elif _is_dunder(name):
         operators = {*_OPERATORS.values(), *map(_reflected, _OPERATORS.values())}
-        known = {*operators, *_BUILTINS.values(), "__getitem__", "__setitem__", "__array__", "__call__"}
+        known = {*operators, *_BUILTINS.values(), "__getitem__", "__setitem__", "__array__", "__call__", "__invert__"}
         assert name in known, f"don’t know how {name} is used (typo, or extend `_OPERATORS`/`_BUILTINS`?)"
         assert name in usage.dunders, f"{name} is never used"
         return
