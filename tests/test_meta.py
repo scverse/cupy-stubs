@@ -187,11 +187,39 @@ _OPERATORS: dict[type[ast.AST], str] = {
     ast.Mult: "__mul__",
     ast.Div: "__truediv__",
     ast.MatMult: "__matmul__",
+    ast.FloorDiv: "__floordiv__",
+    ast.Mod: "__mod__",
     ast.Pow: "__pow__",
+    ast.LShift: "__lshift__",
+    ast.RShift: "__rshift__",
+    ast.BitAnd: "__and__",
+    ast.BitOr: "__or__",
     ast.Eq: "__eq__",
     ast.NotEq: "__ne__",
+    ast.Lt: "__lt__",
+    ast.LtE: "__le__",
+    ast.Gt: "__gt__",
+    ast.GtE: "__ge__",
 }
-_BUILTINS = {"len": "__len__", "iter": "__iter__", "next": "__next__", "list": "__iter__"}
+_BUILTINS = {
+    "len": "__len__",
+    "iter": "__iter__",
+    "next": "__next__",
+    "list": "__iter__",
+    "int": "__int__",
+    "float": "__float__",
+}
+# module-level instances of stub classes, e.g. ufuncs, are used via `__call__`
+_CALLABLE_INSTANCES = {
+    node.target.id
+    for tree in STUBS.values()
+    for node in tree.body
+    if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name)
+}
+
+
+def _reflected(dunder: str) -> str:
+    return f"__r{dunder.removeprefix('__')}"
 
 
 @dataclass
@@ -212,6 +240,8 @@ class Usage:
         match node:
             case ast.Name(id=name) | ast.Attribute(attr=name):
                 self.names.add(name)
+            case ast.BinOp(left=ast.Constant(), op=op) if type(op) in _OPERATORS:  # `1 + a` calls `a.__radd__`
+                self.dunders.add(_reflected(_OPERATORS[type(op)]))
             case ast.BinOp(op=op) | ast.Compare(ops=[op, *_]) if type(op) in _OPERATORS:
                 self.dunders.add(_OPERATORS[type(op)])
             case ast.Subscript(ctx=ctx):
@@ -225,6 +255,8 @@ class Usage:
                 self.calls[name].append(node)
                 if name in _BUILTINS:
                     self.dunders.add(_BUILTINS[name])
+                if name in _CALLABLE_INSTANCES:
+                    self.dunders.add("__call__")
                 # shortcut: any `np.…(…)` call counts, since we don’t know argument types here
                 if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
                     if node.func.value.id == "np" and node.args:
@@ -261,7 +293,8 @@ def test_covered(member: Member, usage: Usage) -> None:
         calls = [c for cls in _subclasses(member.cls or "") for c in usage.calls[cls]]
         assert calls, f"{member.cls} is never instantiated"
     elif _is_dunder(name):
-        known = {*_OPERATORS.values(), *_BUILTINS.values(), "__getitem__", "__setitem__", "__array__"}
+        operators = {*_OPERATORS.values(), *map(_reflected, _OPERATORS.values())}
+        known = {*operators, *_BUILTINS.values(), "__getitem__", "__setitem__", "__array__", "__call__"}
         assert name in known, f"don’t know how {name} is used (typo, or extend `_OPERATORS`/`_BUILTINS`?)"
         assert name in usage.dunders, f"{name} is never used"
         return

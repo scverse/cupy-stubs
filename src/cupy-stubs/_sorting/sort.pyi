@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MPL-2.0
+from typing import Literal
+
+from cupy._core import ndarray
+
+def argsort(a: ndarray, axis: int | None = -1, kind: Literal["stable"] | None = None) -> ndarray: ...
+def lexsort(keys: ndarray) -> ndarray[tuple[int]]: ...

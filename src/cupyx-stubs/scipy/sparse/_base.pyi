@@ -3,7 +3,7 @@ from typing import Literal, overload
 
 import numpy as np
 import scipy.sparse as sps
-from typing_extensions import Self
+from typing_extensions import Self, TypeIs
 
 import cupy.cuda
 from cupy import ndarray
@@ -58,3 +58,5 @@ class _spbase[ScalarT: _SpScalar = _SpScalar]:
 
 # at runtime a mixin without base class, but all its concrete subclasses are `_spbase`s
 class spmatrix[ScalarT: _SpScalar = _SpScalar](_spbase[ScalarT]): ...
+
+def issparse(x: object) -> TypeIs[spmatrix]: ...

@@ -14,3 +14,11 @@ def concatenate(
     dtype: DTypeLike | None = None,
     casting: Literal["no", "equiv", "safe", "same_kind", "unsafe"] = "same_kind",
 ) -> ndarray: ...
+def stack(
+    tup: Sequence[ndarray],
+    axis: int = 0,
+    out: ndarray | None = None,
+    *,
+    dtype: DTypeLike | None = None,
+    casting: Literal["no", "equiv", "safe", "same_kind", "unsafe"] = "same_kind",
+) -> ndarray: ...
