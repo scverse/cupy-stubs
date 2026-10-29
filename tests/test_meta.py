@@ -57,7 +57,7 @@ def _members(body: Iterable[ast.stmt], module: str, cls: str | None = None) -> I
                 yield Member(module, cls, name, ())
             case ast.FunctionDef(name=name):
                 defs[name].append(node)
-            case ast.AnnAssign(target=ast.Name(id=name)) if cls is not None:
+            case ast.AnnAssign(target=ast.Name(id=name)):
                 yield Member(module, cls, name, ())
             case ast.ClassDef(name=name) if cls is None:
                 yield Member(module, None, name, ())
@@ -256,8 +256,6 @@ class Usage:
                 self.calls[name].append(node)
                 if name in _BUILTINS:
                     self.dunders.add(_BUILTINS[name])
-                if name in _CALLABLE_INSTANCES:
-                    self.dunders.add("__call__")
                 # shortcut: any `np.…(…)` call counts, since we don’t know argument types here
                 if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
                     if node.func.value.id == "np" and node.args:
@@ -293,9 +291,12 @@ def test_covered(member: Member, usage: Usage) -> None:
     if name == "__init__":
         calls = [c for cls in _subclasses(member.cls or "") for c in usage.calls[cls]]
         assert calls, f"{member.cls} is never instantiated"
+    elif name == "__call__":
+        calls = [c for n in _CALLABLE_INSTANCES for c in usage.calls[n]]
+        assert calls, f"{member.cls} instances are never called"
     elif _is_dunder(name):
         operators = {*_OPERATORS.values(), *map(_reflected, _OPERATORS.values())}
-        known = {*operators, *_BUILTINS.values(), "__getitem__", "__setitem__", "__array__", "__call__", "__invert__"}
+        known = {*operators, *_BUILTINS.values(), "__getitem__", "__setitem__", "__array__", "__invert__"}
         assert name in known, f"don’t know how {name} is used (typo, or extend `_OPERATORS`/`_BUILTINS`?)"
         assert name in usage.dunders, f"{name} is never used"
         return

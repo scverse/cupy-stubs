@@ -7,6 +7,7 @@ from typing_extensions import Self, TypeIs
 
 import cupy.cuda
 from cupy import ndarray
+from cupy._core.core import _ToDType as _ToDType
 
 from ._csc import csc_matrix
 from ._csr import csr_matrix
@@ -31,8 +32,6 @@ type _ToSparseOf[ScalarT: _SpScalar] = (
     | sps.sparray[ScalarT, tuple[int, int]]
     | tuple[ndarray[tuple[int], np.dtype[ScalarT]], tuple[ndarray, ndarray]]
 )
-# `dtype` arguments that determine the scalar type
-type _ToDType[ScalarT: _SpScalar] = type[ScalarT] | np.dtype[ScalarT]
 
 class _spbase[ScalarT: _SpScalar = _SpScalar]:
     shape: tuple[int, int]

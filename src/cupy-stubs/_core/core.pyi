@@ -19,6 +19,8 @@ type _Shape = tuple[int, ...]
 # the scalar types cupy supports
 type _Scalar = np.bool | _Integer | np.float16 | np.float32 | np.float64 | np.complex64 | np.complex128
 type _DType = np.dtype[_Scalar]
+# `dtype` arguments that determine the scalar type
+type _ToDType[ScalarT: _Scalar] = type[ScalarT] | np.dtype[ScalarT]
 
 # `numpy.typing.NDArray` has `tuple[Any, ...]` as shape
 type _NDArray[ScalarT: _Generic] = np.ndarray[_Shape, np.dtype[ScalarT]]

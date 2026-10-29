@@ -410,6 +410,7 @@ def test_log2(a: cp.ndarray) -> None:
     assert_type(x, cp.ndarray)
     assert x.dtype == np.float64
     assert isinstance(cp.log2(2.0), cp.ndarray)
+    assert isinstance(cp.log2(np.float32(2)), cp.ndarray)
     assert isinstance(cp.log2, cp.ufunc)
     assert_type(cp.log2.nin, int)
     assert cp.log2.nin == 1
@@ -424,9 +425,12 @@ def test_argsort(a: cp.ndarray) -> None:
 
 
 def test_lexsort() -> None:
-    x = cp.lexsort(cp.asarray([[1, 0, 1], [0, 0, 1]]))
+    x = cp.lexsort(cp.asarray([1, 0, 1, 0, 0, 1]).reshape((2, 3)))
     assert_type(x, cp.ndarray[tuple[int], np.dtype[Scalar]])
     assert x.get().tolist() == [1, 0, 2]
+    y = cp.lexsort(cp.asarray([3, 1, 2]))
+    assert_type(y, cp.ndarray)
+    assert y.ndim == 0
 
 
 def test_searchsorted() -> None:
@@ -477,7 +481,6 @@ def test_device() -> None:
 
 def test_get_current_stream() -> None:
     stream = cupy.cuda.get_current_stream(device_id=0)
-    assert_type(stream, cupy.cuda.Stream)
-    assert isinstance(stream, cupy.cuda.Stream)
+    assert_type(stream, "cupy.cuda._BaseStream")
     assert_type(stream.ptr, int)
     assert isinstance(stream.ptr, int)

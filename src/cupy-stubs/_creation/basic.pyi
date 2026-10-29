@@ -6,9 +6,7 @@ import numpy as np
 from numpy.typing import ArrayLike, DTypeLike
 
 from cupy._core import ndarray
-from cupy._core.core import _Scalar, _Shape
-
-type _ToDType[ScalarT: _Scalar] = type[ScalarT] | np.dtype[ScalarT]
+from cupy._core.core import _Scalar, _Shape, _ToDType
 
 @overload
 def full[ScalarT: _Scalar](

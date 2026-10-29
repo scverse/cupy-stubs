@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: MPL-2.0
 from typing import Literal
 
-from numpy.typing import ArrayLike, DTypeLike
+from numpy.typing import DTypeLike
 
-from .core import ndarray
+from .core import _Scalar, ndarray
 
 class ufunc:
     @property
@@ -14,7 +14,7 @@ class ufunc:
 class _UFunc_Nin1_Nout1(ufunc):
     def __call__(
         self,
-        x: ndarray | ArrayLike,
+        x: ndarray | _Scalar | complex,
         /,
         out: ndarray | None = None,
         *,
