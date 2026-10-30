@@ -3,7 +3,7 @@ from typing import Literal, overload
 
 import scipy.sparse as sps
 from numpy.typing import DTypeLike
-from typing_extensions import Self, override
+from typing_extensions import Self, TypeIs, override
 
 import cupy.cuda
 
@@ -28,3 +28,5 @@ class csr_matrix[ScalarT: _SpScalar = _SpScalar](spmatrix[ScalarT], _compressed_
     def power[NewScalarT: _SpScalar](self, n: int, dtype: _ToDType[NewScalarT]) -> csr_matrix[NewScalarT]: ...
     @overload
     def power(self, n: int, dtype: DTypeLike) -> csr_matrix: ...
+
+def isspmatrix_csr(x: object) -> TypeIs[csr_matrix]: ...

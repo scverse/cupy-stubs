@@ -221,3 +221,29 @@ def test_vstack(csr: cps.csr_matrix, csc: cps.csc_matrix) -> None:
     x = cps.vstack([csr, csc], format="csc", dtype=np.float64)
     assert_type(x, cps.spmatrix)
     assert isinstance(x, cps.csc_matrix)
+
+
+def test_issparse(dense: cp.ndarray, csr: cps.csr_matrix, coo: cps.coo_matrix) -> None:
+    def check(x: cp.ndarray | cps.csr_matrix) -> cp.ndarray | cps.csr_matrix:
+        if cps.issparse(x):
+            assert_type(x, cps.csr_matrix)
+            return x
+        assert_type(x, cp.ndarray)
+        return x
+
+    assert isinstance(check(csr), cps.csr_matrix)
+    assert isinstance(check(dense), cp.ndarray)
+    assert cps.issparse(coo)
+
+
+def test_isspmatrix(csr: cps.csr_matrix, csc: cps.csc_matrix) -> None:
+    def check(x: cps.csr_matrix | cps.csc_matrix) -> str:
+        if cps.isspmatrix_csc(x):
+            assert_type(x, cps.csc_matrix)
+            return x.format
+        assert cps.isspmatrix_csr(x)
+        assert_type(x, cps.csr_matrix)
+        return x.format
+
+    assert check(csr) == "csr"
+    assert check(csc) == "csc"

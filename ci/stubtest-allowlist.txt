@@ -5,3 +5,7 @@ cupyx\.scipy\.sparse\._base\.spmatrix\.__init__
 cupyx\.scipy\.sparse\._base\._spbase\.__array__
 cupyx\.scipy\.sparse\._base\._spbase\.dtype
 cupyx\.scipy\.sparse\._compressed\._compressed_sparse_matrix\.(data|format)
+cupy\._core\._kernel\.ufunc\.__init__
+cupy\.random\._generator_api\.Generator\.__init__
+# ufuncs are typed as stub-only subclasses of `ufunc` with `__call__` signatures
+cupy\._math\.explog\.\w+
