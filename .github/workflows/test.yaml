@@ -49,7 +49,7 @@ jobs:
         with:
           enable-cache: true # "auto" is `false` on non-GitHub runners
       - name: Run tests in all hatch environments
-        run: uvx hatch test --all # `ci/install-cupy.py` picks `cupy-cuda13x` here
+        run: uvx hatch test --all --parallel # `ci/install-cupy.py` picks `cupy-cuda13x` here
       - name: Check stubs against the runtime
         run: uvx hatch run stubtest:check
 

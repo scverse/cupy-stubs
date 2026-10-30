@@ -6,6 +6,7 @@ from __future__ import annotations
 import ast
 import importlib
 import inspect
+import re
 from collections import defaultdict
 from collections.abc import Generator, Iterable, Iterator
 from dataclasses import dataclass
@@ -145,33 +146,73 @@ def _default(p: P) -> object:
         return ...
 
 
+def _runtime_params(obj: object) -> list[P]:
+    try:
+        return list(inspect.signature(obj).parameters.values())  # type: ignore[arg-type]
+    except ValueError:
+        pass
+    # Cython methods embed their signature as the docstring’s first line, e.g. `_ndarray_base.max(self, axis=None) -> …`
+    first_line = (getattr(obj, "__doc__", None) or "").partition("\n")[0]
+    if not (m := re.fullmatch(r"[\w.]+(\(.*\))(?: -> .*)?", first_line)):
+        pytest.skip("no runtime signature (Cython builtin without embedded signature)")
+    params = re.sub(r"\b[\w.]+\s+(?=\w)", "", m[1])  # drop C types: `(int device_id=-1)` → `(device_id=-1)`
+    f = ast.parse(f"def f{params}: ...").body[0]
+    assert isinstance(f, ast.FunctionDef)
+    return _stub_params(f)
+
+
+def _runtime_default(p: P) -> object:
+    return _default(p) if isinstance(p.default, ast.AST) else p.default
+
+
+def _overload_compatible(stub: list[P], runtime: list[P]) -> None:
+    """Assert that every parameter of an overload can be passed the same way at runtime."""
+    by_name = {r.name: r for r in runtime}
+    var_pos = next((r for r in runtime if r.kind is P.VAR_POSITIONAL), None)
+    for i, s in enumerate(stub):
+        match s.kind:
+            case P.POSITIONAL_ONLY:
+                r = runtime[i] if i < len(runtime) else None
+                assert (r and r.kind in {P.POSITIONAL_ONLY, P.POSITIONAL_OR_KEYWORD}) or var_pos, (
+                    f"{s.name!r} can’t be passed positionally"
+                )
+            case P.POSITIONAL_OR_KEYWORD:
+                r = runtime[i] if i < len(runtime) else None
+                assert r and (r.name, r.kind) == (s.name, s.kind), f"{s.name!r} isn’t positional-or-keyword at {i}"
+            case P.KEYWORD_ONLY:
+                r = by_name.get(s.name)
+                assert r and r.kind in {P.KEYWORD_ONLY, P.POSITIONAL_OR_KEYWORD}, (
+                    f"{s.name!r} can’t be passed by keyword"
+                )
+            case P.VAR_POSITIONAL | P.VAR_KEYWORD:
+                assert any(r.kind is s.kind for r in runtime), f"runtime has no {s}"
+        if (r := by_name.get(s.name)) and s.kind is not P.POSITIONAL_ONLY and (d := _default(s)) not in {..., P.empty}:
+            assert d == _runtime_default(r), f"default of {s.name!r}"
+
+
 @pytest.mark.parametrize("member", [m for m in MEMBERS if m.defs], ids=lambda m: m.id)
 def test_signature_matches_runtime(member: Member) -> None:
     obj = _runtime(member)
     assert callable(obj)
-    try:
-        sig = inspect.signature(obj)
-    except ValueError:
-        pytest.skip("no runtime signature (Cython builtin)")
-    runtime = list(sig.parameters.values())
-    if any(p.kind in {P.VAR_POSITIONAL, P.VAR_KEYWORD} for p in runtime):
-        pytest.skip("runtime only takes *args/**kwargs")
+    runtime = _runtime_params(obj)
     if member.cls and not isinstance(inspect.getattr_static(_runtime_cls(member), member.name), staticmethod):
         runtime = runtime[1:]  # drop `self`
+    if any(p.kind is P.VAR_KEYWORD for p in runtime):
+        pytest.skip("runtime takes **kwargs (a wrapper hiding the real signature)")
 
     for stub in member.params():
         if _is_dunder(member.name) and member.name != "__init__":  # called via operators, so only arity matters
             assert len(stub) == len(runtime)
             continue
-        if len(member.defs) > 1:  # each overload only needs to be a subset of the runtime signature
-            assert {p.name for p in stub} <= {p.name for p in runtime}
+        if len(member.defs) > 1:  # each overload only needs to be a compatible subset of the runtime signature
+            _overload_compatible(stub, runtime)
             continue
         assert [(p.name, p.kind, p.default is P.empty) for p in stub] == [
             (p.name, p.kind, p.default is P.empty) for p in runtime
         ]
         for s, r in zip(stub, runtime, strict=True):
             if (d := _default(s)) is not ...:
-                assert d == r.default, f"default of {s.name!r}"
+                assert d == _runtime_default(r), f"default of {s.name!r}"
 
 
 def _runtime_cls(member: Member) -> type:

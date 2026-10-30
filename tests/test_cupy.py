@@ -11,9 +11,9 @@ import cupy as cp
 from cupy._core.flags import Flags
 
 if sys.version_info >= (3, 11):
-    from typing import assert_type
+    from typing import Unpack, assert_type
 else:
-    from typing_extensions import assert_type
+    from typing_extensions import Unpack, assert_type
 import cupy.cuda
 
 if TYPE_CHECKING:  # stub-only class
@@ -173,6 +173,10 @@ def test_ndarray_all(a: cp.ndarray) -> None:
     y = a.all(axis=0)
     assert_type(y, cp.ndarray[tuple[int, ...], np.dtype[np.bool]])
     assert isinstance(y, cp.ndarray)
+    out = a[:1] > 0
+    z = a.all(axis=(0,), out=out, keepdims=True)
+    assert_type(z, cp.ndarray[tuple[int, ...], np.dtype[np.bool]])
+    assert z is out
 
 
 def test_ndarray_any(a: cp.ndarray) -> None:
@@ -182,6 +186,9 @@ def test_ndarray_any(a: cp.ndarray) -> None:
     y = a.any(axis=1)
     assert_type(y, cp.ndarray[tuple[int, ...], np.dtype[np.bool]])
     assert y.shape == (2,)
+    z = a.any(axis=1, out=None, keepdims=True)
+    assert_type(z, cp.ndarray[tuple[int, ...], np.dtype[np.bool]])
+    assert z.shape == (2, 1)
 
 
 def test_ndarray_max(a: cp.ndarray) -> None:
@@ -191,6 +198,10 @@ def test_ndarray_max(a: cp.ndarray) -> None:
     y = a.max(axis=0)
     assert_type(y, cp.ndarray)
     assert y.shape == (3,)
+    out = cp.empty((1, 3), dtype=np.float32)
+    z = a.max(axis=0, out=out, keepdims=True)
+    assert_type(z, cp.ndarray[tuple[int, int], np.dtype[np.float32]])
+    assert z is out
 
 
 def test_ndarray_argmax(a: cp.ndarray) -> None:
@@ -200,6 +211,10 @@ def test_ndarray_argmax(a: cp.ndarray) -> None:
     y = a.argmax(axis=1)
     assert_type(y, cp.ndarray[tuple[int, ...], np.dtype[np.int64]])
     assert y.dtype == np.int64
+    z = a.argmax(axis=1, out=None, dtype=np.int32, keepdims=True)
+    assert_type(z, cp.ndarray[tuple[int, ...], np.dtype[np.int32]])
+    assert z.dtype == np.int32
+    assert z.shape == (2, 1)
 
 
 def test_ndarray_min(a: cp.ndarray) -> None:
@@ -209,6 +224,10 @@ def test_ndarray_min(a: cp.ndarray) -> None:
     y = a.min(axis=0)
     assert_type(y, cp.ndarray)
     assert y.shape == (3,)
+    out = cp.empty((1, 3), dtype=np.float32)
+    z = a.min(axis=0, out=out, keepdims=True)
+    assert_type(z, cp.ndarray[tuple[int, int], np.dtype[np.float32]])
+    assert z is out
 
 
 def test_ndarray_argmin(a: cp.ndarray) -> None:
@@ -218,15 +237,47 @@ def test_ndarray_argmin(a: cp.ndarray) -> None:
     y = a.argmin(axis=1)
     assert_type(y, cp.ndarray[tuple[int, ...], np.dtype[np.int64]])
     assert y.dtype == np.int64
+    z = a.argmin(axis=1, out=None, dtype=np.int32, keepdims=True)
+    assert_type(z, cp.ndarray[tuple[int, ...], np.dtype[np.int32]])
+    assert z.dtype == np.int32
+    assert z.shape == (2, 1)
+
+
+def test_ndarray_reduction_shapes() -> None:
+    b = cp.zeros((2, 3), dtype=np.float32)
+    assert_type(b.max(axis=0), cp.ndarray[tuple[int], np.dtype[np.float32]])
+    assert b.max(axis=0).shape == (3,)
+    assert_type(b.all(axis=1), cp.ndarray[tuple[int], np.dtype[np.bool]])
+    assert b.all(axis=1).shape == (2,)
+    assert_type(b.argmin(axis=1, dtype=np.int32), cp.ndarray[tuple[int], np.dtype[np.int32]])
+    assert b.argmin(axis=1, dtype=np.int32).dtype == np.int32
+    assert_type(b.min(axis=(0, 1), keepdims=True), cp.ndarray[tuple[int, int], np.dtype[np.float32]])
+    assert b.min(axis=(0, 1), keepdims=True).shape == (1, 1)
+    assert_type(b.sum(axis=0), cp.ndarray[tuple[int], np.dtype[Scalar]])
+    assert_type(b.sum(dtype=np.float64), cp.ndarray[tuple[()], np.dtype[np.float64]])
+    assert b.sum(dtype=np.float64).dtype == np.float64
+    v = cp.zeros(3, dtype=np.bool)
+    assert_type(v.any(axis=0), cp.ndarray[tuple[()], np.dtype[np.bool]])
+    assert v.any(axis=0).shape == ()
+    c = cp.zeros((1, 2, 3), dtype=np.float32)
+    assert_type(c.argmax(axis=2), cp.ndarray[tuple[int, int], np.dtype[np.int64]])
+    assert c.argmax(axis=2).shape == (1, 2)
+    assert_type(c.squeeze(axis=0), cp.ndarray[tuple[int, int], np.dtype[np.float32]])
+    assert c.squeeze(axis=0).shape == (2, 3)
 
 
 def test_ndarray_shape_methods(a: cp.ndarray) -> None:
     assert_type(a.reshape((3, 2)), cp.ndarray[tuple[int, int], np.dtype[Scalar]])
     assert a.reshape((3, 2)).shape == (3, 2)
     assert_type(a.reshape(6), cp.ndarray[tuple[int], np.dtype[Scalar]])
-    assert_type(a.reshape([6]), cp.ndarray[tuple[int, ...], np.dtype[Scalar]])
-    assert a.reshape([6]).shape == (6,)
     assert a.reshape(6).shape == (6,)
+    assert_type(a.reshape(3, 2, order="F", copy=True), cp.ndarray[tuple[int, int], np.dtype[Scalar]])
+    assert a.reshape(3, 2, order="F", copy=True).shape == (3, 2)
+    assert_type(a.reshape(1, 3, 2), cp.ndarray[tuple[int, int, int], np.dtype[Scalar]])
+    assert_type(
+        a.reshape(1, 1, 3, 2, 1), cp.ndarray[tuple[int, int, int, int, Unpack[tuple[int, ...]]], np.dtype[Scalar]]
+    )
+    assert a.reshape(1, 1, 3, 2, 1).shape == (1, 1, 3, 2, 1)
     assert_type(a[None].squeeze(axis=0), cp.ndarray)
     assert a[None].squeeze(axis=0).shape == (2, 3)
     assert_type(a.ravel(order="F"), cp.ndarray[tuple[int], np.dtype[Scalar]])
@@ -258,35 +309,37 @@ def test_ndarray_sum(a: cp.ndarray) -> None:
 
 def test_full() -> None:
     x = cp.full((2, 3), 1.5, dtype=np.float32, order="F")
-    assert_type(x, cp.ndarray[tuple[int, ...], np.dtype[np.float32]])
+    assert_type(x, cp.ndarray[tuple[int, int], np.dtype[np.float32]])
     assert x.dtype == np.float32
     y = cp.full(3, cp.asarray(2))
-    assert_type(y, cp.ndarray)
-    assert isinstance(y, cp.ndarray)
-    assert_type(cp.full(3, 1, dtype="int32"), cp.ndarray)
+    assert_type(y, cp.ndarray[tuple[int], np.dtype[Scalar]])
+    assert y.shape == (3,)
+    assert_type(cp.full(3, 1, dtype="int32"), cp.ndarray[tuple[int], np.dtype[Scalar]])
+    assert_type(cp.full([2, 3], 1, dtype=np.int8), cp.ndarray[tuple[int, ...], np.dtype[np.int8]])
 
 
 def test_ones() -> None:
     x = cp.ones((2, 3), dtype=np.float32, order="F")
-    assert_type(x, cp.ndarray[tuple[int, ...], np.dtype[np.float32]])
+    assert_type(x, cp.ndarray[tuple[int, int], np.dtype[np.float32]])
     assert x.dtype == np.float32
-    assert_type(cp.ones(3), cp.ndarray)
+    assert_type(cp.ones(3), cp.ndarray[tuple[int], np.dtype[Scalar]])
     assert isinstance(cp.ones(3), cp.ndarray)
 
 
 def test_zeros() -> None:
     x = cp.zeros((2, 3), dtype=np.dtype(np.int64), order="F")
-    assert_type(x, cp.ndarray[tuple[int, ...], np.dtype[np.int64]])
+    assert_type(x, cp.ndarray[tuple[int, int], np.dtype[np.int64]])
     assert x.dtype == np.int64
-    assert_type(cp.zeros(3), cp.ndarray)
+    assert_type(cp.zeros(3), cp.ndarray[tuple[int], np.dtype[Scalar]])
+    assert_type(cp.zeros([2, 3]), cp.ndarray)
     assert cp.zeros(3).dtype == np.float64
 
 
 def test_empty() -> None:
     x = cp.empty((2, 3), dtype=np.uint32, order="F")
-    assert_type(x, cp.ndarray[tuple[int, ...], np.dtype[np.uint32]])
+    assert_type(x, cp.ndarray[tuple[int, int], np.dtype[np.uint32]])
     assert x.dtype == np.uint32
-    assert_type(cp.empty(3), cp.ndarray)
+    assert_type(cp.empty(3), cp.ndarray[tuple[int], np.dtype[Scalar]])
     assert cp.empty(3).dtype == np.float64
 
 
@@ -354,7 +407,7 @@ def test_asnumpy(a: cp.ndarray) -> None:
     assert_type(x, np.ndarray[tuple[int, ...], np.dtype[Scalar]])
     assert isinstance(x, np.ndarray)
     f32 = cp.zeros(3, dtype=np.float32)
-    assert_type(cp.asnumpy(f32), np.ndarray[tuple[int, ...], np.dtype[np.float32]])
+    assert_type(cp.asnumpy(f32), np.ndarray[tuple[int], np.dtype[np.float32]])
     y = cp.asnumpy([1, 2])
     assert_type(y, "np.ndarray[tuple[int, ...], np.dtype[np.generic[object]]]")
     assert isinstance(y, np.ndarray)
@@ -374,8 +427,10 @@ def test_array_equal(a: cp.ndarray) -> None:
 
 def test_broadcast_to(a: cp.ndarray) -> None:
     x = cp.broadcast_to(a, (4, 2, 3))
-    assert_type(x, cp.ndarray)
+    assert_type(x, cp.ndarray[tuple[int, int, int], np.dtype[Scalar]])
     assert x.shape == (4, 2, 3)
+    assert_type(cp.broadcast_to(cp.zeros(1, dtype=np.int8), 3), cp.ndarray[tuple[int], np.dtype[np.int8]])
+    assert cp.broadcast_to(a[0], [4, 3]).shape == (4, 3)
 
 
 def test_concatenate(a: cp.ndarray) -> None:
@@ -464,7 +519,7 @@ def test_log2(a: cp.ndarray) -> None:
     assert z.shape == ()
     assert isinstance(cp.log2(np.float32(2)), cp.ndarray)
     out = cp.zeros((2, 3), dtype=np.float32)
-    assert_type(cp.log2(cp.arange(1, 4, dtype=np.float32), out=out), cp.ndarray[tuple[int, ...], np.dtype[np.float32]])
+    assert_type(cp.log2(cp.arange(1, 4, dtype=np.float32), out=out), cp.ndarray[tuple[int, int], np.dtype[np.float32]])
     assert out.shape == (2, 3)
     assert isinstance(cp.log2, cp.ufunc)
     assert_type(cp.log2.nin, int)

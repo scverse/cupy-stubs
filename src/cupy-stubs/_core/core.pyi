@@ -16,6 +16,8 @@ type _Generic = np.generic[object]
 type _Integer = np.int8 | np.int16 | np.int32 | np.int64 | np.uint8 | np.uint16 | np.uint32 | np.uint64
 type _Slice = slice[int | None, int | None, int | None]
 type _Shape = tuple[int, ...]
+type _Axis = int | tuple[int, ...]
+type _Order = Literal["C", "F", "A"]
 # the scalar types cupy supports
 type _Scalar = np.bool | _Integer | np.float16 | np.float32 | np.float64 | np.complex64 | np.complex128
 type _DType = np.dtype[_Scalar]
@@ -62,7 +64,7 @@ class ndarray[ShapeT: _Shape = _Shape, DTypeT: _DType = _DType]:
     # operators
     # Raises at runtime (no implicit conversion), but makes this `ArrayLike`,
     # so e.g. `np.all(arr)` type checks, which works by dispatching to `cupy.all` via `__array_function__`.
-    def __array__(self) -> np.ndarray[ShapeT, DTypeT]: ...
+    def __array__(self, dtype: None = None) -> np.ndarray[ShapeT, DTypeT]: ...
     def __len__(self) -> int: ...
     def __getitem__(self, index: _Index) -> ndarray[_Shape, DTypeT]: ...  # never returns scalars
     def __setitem__(self, index: _Index, value: object) -> None: ...
@@ -116,56 +118,339 @@ class ndarray[ShapeT: _Shape = _Shape, DTypeT: _DType = _DType]:
     ) -> ndarray[ShapeT]: ...
     @property
     def T(self) -> Self: ...
+    # one `axis: int` overload per ndim, for the same reason as in `reshape`
     @overload
-    def all(self, axis: None = None) -> ndarray[tuple[()], np.dtype[np.bool]]: ...
+    def all[OutT: ndarray](self, axis: _Axis | None, out: OutT, keepdims: bool = False) -> OutT: ...
     @overload
-    def all(self, axis: int) -> ndarray[_Shape, np.dtype[np.bool]]: ...
+    def all[OutT: ndarray](self, axis: _Axis | None = None, *, out: OutT, keepdims: bool = False) -> OutT: ...
     @overload
-    def any(self, axis: None = None) -> ndarray[tuple[()], np.dtype[np.bool]]: ...
+    def all(
+        self, axis: None = None, out: None = None, keepdims: Literal[False] = False
+    ) -> ndarray[tuple[()], np.dtype[np.bool]]: ...
     @overload
-    def any(self, axis: int) -> ndarray[_Shape, np.dtype[np.bool]]: ...
+    def all(
+        self, axis: _Axis | None = None, out: None = None, *, keepdims: Literal[True]
+    ) -> ndarray[ShapeT, np.dtype[np.bool]]: ...
     @overload
-    def max(self, axis: None = None) -> ndarray[tuple[()], DTypeT]: ...
+    def all(
+        self: ndarray[tuple[int]], axis: int, out: None = None, keepdims: Literal[False] = False
+    ) -> ndarray[tuple[()], np.dtype[np.bool]]: ...
     @overload
-    def max(self, axis: int) -> ndarray[_Shape, DTypeT]: ...
+    def all(
+        self: ndarray[tuple[int, int]], axis: int, out: None = None, keepdims: Literal[False] = False
+    ) -> ndarray[tuple[int], np.dtype[np.bool]]: ...
     @overload
-    def argmax(self, axis: None = None) -> ndarray[tuple[()], np.dtype[np.int64]]: ...
+    def all(
+        self: ndarray[tuple[int, int, int]], axis: int, out: None = None, keepdims: Literal[False] = False
+    ) -> ndarray[tuple[int, int], np.dtype[np.bool]]: ...
     @overload
-    def argmax(self, axis: int) -> ndarray[_Shape, np.dtype[np.int64]]: ...
+    def all(
+        self, axis: _Axis | None = None, out: None = None, keepdims: bool = False
+    ) -> ndarray[_Shape, np.dtype[np.bool]]: ...
     @overload
-    def min(self, axis: None = None) -> ndarray[tuple[()], DTypeT]: ...
+    def any[OutT: ndarray](self, axis: _Axis | None, out: OutT, keepdims: bool = False) -> OutT: ...
     @overload
-    def min(self, axis: int) -> ndarray[_Shape, DTypeT]: ...
+    def any[OutT: ndarray](self, axis: _Axis | None = None, *, out: OutT, keepdims: bool = False) -> OutT: ...
     @overload
-    def argmin(self, axis: None = None) -> ndarray[tuple[()], np.dtype[np.int64]]: ...
+    def any(
+        self, axis: None = None, out: None = None, keepdims: Literal[False] = False
+    ) -> ndarray[tuple[()], np.dtype[np.bool]]: ...
     @overload
-    def argmin(self, axis: int) -> ndarray[_Shape, np.dtype[np.int64]]: ...
+    def any(
+        self, axis: _Axis | None = None, out: None = None, *, keepdims: Literal[True]
+    ) -> ndarray[ShapeT, np.dtype[np.bool]]: ...
     @overload
-    def reshape(self, shape: int) -> ndarray[tuple[int], DTypeT]: ...
+    def any(
+        self: ndarray[tuple[int]], axis: int, out: None = None, keepdims: Literal[False] = False
+    ) -> ndarray[tuple[()], np.dtype[np.bool]]: ...
     @overload
-    def reshape[NewShapeT: _Shape](self, shape: NewShapeT) -> ndarray[NewShapeT, DTypeT]: ...
+    def any(
+        self: ndarray[tuple[int, int]], axis: int, out: None = None, keepdims: Literal[False] = False
+    ) -> ndarray[tuple[int], np.dtype[np.bool]]: ...
     @overload
-    def reshape(self, shape: Sequence[int]) -> ndarray[_Shape, DTypeT]: ...
+    def any(
+        self: ndarray[tuple[int, int, int]], axis: int, out: None = None, keepdims: Literal[False] = False
+    ) -> ndarray[tuple[int, int], np.dtype[np.bool]]: ...
+    @overload
+    def any(
+        self, axis: _Axis | None = None, out: None = None, keepdims: bool = False
+    ) -> ndarray[_Shape, np.dtype[np.bool]]: ...
+    @overload
+    def max[OutT: ndarray](self, axis: _Axis | None, out: OutT, keepdims: bool = False) -> OutT: ...
+    @overload
+    def max[OutT: ndarray](self, axis: _Axis | None = None, *, out: OutT, keepdims: bool = False) -> OutT: ...
+    @overload
+    def max(
+        self, axis: None = None, out: None = None, keepdims: Literal[False] = False
+    ) -> ndarray[tuple[()], DTypeT]: ...
+    @overload
+    def max(
+        self, axis: _Axis | None = None, out: None = None, *, keepdims: Literal[True]
+    ) -> ndarray[ShapeT, DTypeT]: ...
+    @overload
+    def max(
+        self: ndarray[tuple[int], DTypeT], axis: int, out: None = None, keepdims: Literal[False] = False
+    ) -> ndarray[tuple[()], DTypeT]: ...
+    @overload
+    def max(
+        self: ndarray[tuple[int, int], DTypeT], axis: int, out: None = None, keepdims: Literal[False] = False
+    ) -> ndarray[tuple[int], DTypeT]: ...
+    @overload
+    def max(
+        self: ndarray[tuple[int, int, int], DTypeT], axis: int, out: None = None, keepdims: Literal[False] = False
+    ) -> ndarray[tuple[int, int], DTypeT]: ...
+    @overload
+    def max(self, axis: _Axis | None = None, out: None = None, keepdims: bool = False) -> ndarray[_Shape, DTypeT]: ...
+    @overload
+    def argmax[OutT: ndarray](
+        self, axis: _Axis | None, out: OutT, dtype: DTypeLike | None = None, keepdims: bool = False
+    ) -> OutT: ...
+    @overload
+    def argmax[OutT: ndarray](
+        self, axis: _Axis | None = None, *, out: OutT, dtype: DTypeLike | None = None, keepdims: bool = False
+    ) -> OutT: ...
+    @overload
+    def argmax[ScalarT: _Scalar = np.int64](
+        self,
+        axis: None = None,
+        out: None = None,
+        dtype: _ToDType[ScalarT] | None = None,
+        keepdims: Literal[False] = False,
+    ) -> ndarray[tuple[()], np.dtype[ScalarT]]: ...
+    @overload
+    def argmax[ScalarT: _Scalar = np.int64](
+        self,
+        axis: _Axis | None = None,
+        out: None = None,
+        dtype: _ToDType[ScalarT] | None = None,
+        *,
+        keepdims: Literal[True],
+    ) -> ndarray[ShapeT, np.dtype[ScalarT]]: ...
+    @overload
+    def argmax[ScalarT: _Scalar = np.int64](
+        self: ndarray[tuple[int]],
+        axis: int,
+        out: None = None,
+        dtype: _ToDType[ScalarT] | None = None,
+        keepdims: Literal[False] = False,
+    ) -> ndarray[tuple[()], np.dtype[ScalarT]]: ...
+    @overload
+    def argmax[ScalarT: _Scalar = np.int64](
+        self: ndarray[tuple[int, int]],
+        axis: int,
+        out: None = None,
+        dtype: _ToDType[ScalarT] | None = None,
+        keepdims: Literal[False] = False,
+    ) -> ndarray[tuple[int], np.dtype[ScalarT]]: ...
+    @overload
+    def argmax[ScalarT: _Scalar = np.int64](
+        self: ndarray[tuple[int, int, int]],
+        axis: int,
+        out: None = None,
+        dtype: _ToDType[ScalarT] | None = None,
+        keepdims: Literal[False] = False,
+    ) -> ndarray[tuple[int, int], np.dtype[ScalarT]]: ...
+    @overload
+    def argmax[ScalarT: _Scalar = np.int64](
+        self,
+        axis: _Axis | None = None,
+        out: None = None,
+        dtype: _ToDType[ScalarT] | None = None,
+        keepdims: bool = False,
+    ) -> ndarray[_Shape, np.dtype[ScalarT]]: ...
+    @overload
+    def argmax(
+        self, axis: _Axis | None = None, out: None = None, dtype: DTypeLike | None = None, keepdims: bool = False
+    ) -> ndarray: ...
+    @overload
+    def min[OutT: ndarray](self, axis: _Axis | None, out: OutT, keepdims: bool = False) -> OutT: ...
+    @overload
+    def min[OutT: ndarray](self, axis: _Axis | None = None, *, out: OutT, keepdims: bool = False) -> OutT: ...
+    @overload
+    def min(
+        self, axis: None = None, out: None = None, keepdims: Literal[False] = False
+    ) -> ndarray[tuple[()], DTypeT]: ...
+    @overload
+    def min(
+        self, axis: _Axis | None = None, out: None = None, *, keepdims: Literal[True]
+    ) -> ndarray[ShapeT, DTypeT]: ...
+    @overload
+    def min(
+        self: ndarray[tuple[int], DTypeT], axis: int, out: None = None, keepdims: Literal[False] = False
+    ) -> ndarray[tuple[()], DTypeT]: ...
+    @overload
+    def min(
+        self: ndarray[tuple[int, int], DTypeT], axis: int, out: None = None, keepdims: Literal[False] = False
+    ) -> ndarray[tuple[int], DTypeT]: ...
+    @overload
+    def min(
+        self: ndarray[tuple[int, int, int], DTypeT], axis: int, out: None = None, keepdims: Literal[False] = False
+    ) -> ndarray[tuple[int, int], DTypeT]: ...
+    @overload
+    def min(self, axis: _Axis | None = None, out: None = None, keepdims: bool = False) -> ndarray[_Shape, DTypeT]: ...
+    @overload
+    def argmin[OutT: ndarray](
+        self, axis: _Axis | None, out: OutT, dtype: DTypeLike | None = None, keepdims: bool = False
+    ) -> OutT: ...
+    @overload
+    def argmin[OutT: ndarray](
+        self, axis: _Axis | None = None, *, out: OutT, dtype: DTypeLike | None = None, keepdims: bool = False
+    ) -> OutT: ...
+    @overload
+    def argmin[ScalarT: _Scalar = np.int64](
+        self,
+        axis: None = None,
+        out: None = None,
+        dtype: _ToDType[ScalarT] | None = None,
+        keepdims: Literal[False] = False,
+    ) -> ndarray[tuple[()], np.dtype[ScalarT]]: ...
+    @overload
+    def argmin[ScalarT: _Scalar = np.int64](
+        self,
+        axis: _Axis | None = None,
+        out: None = None,
+        dtype: _ToDType[ScalarT] | None = None,
+        *,
+        keepdims: Literal[True],
+    ) -> ndarray[ShapeT, np.dtype[ScalarT]]: ...
+    @overload
+    def argmin[ScalarT: _Scalar = np.int64](
+        self: ndarray[tuple[int]],
+        axis: int,
+        out: None = None,
+        dtype: _ToDType[ScalarT] | None = None,
+        keepdims: Literal[False] = False,
+    ) -> ndarray[tuple[()], np.dtype[ScalarT]]: ...
+    @overload
+    def argmin[ScalarT: _Scalar = np.int64](
+        self: ndarray[tuple[int, int]],
+        axis: int,
+        out: None = None,
+        dtype: _ToDType[ScalarT] | None = None,
+        keepdims: Literal[False] = False,
+    ) -> ndarray[tuple[int], np.dtype[ScalarT]]: ...
+    @overload
+    def argmin[ScalarT: _Scalar = np.int64](
+        self: ndarray[tuple[int, int, int]],
+        axis: int,
+        out: None = None,
+        dtype: _ToDType[ScalarT] | None = None,
+        keepdims: Literal[False] = False,
+    ) -> ndarray[tuple[int, int], np.dtype[ScalarT]]: ...
+    @overload
+    def argmin[ScalarT: _Scalar = np.int64](
+        self,
+        axis: _Axis | None = None,
+        out: None = None,
+        dtype: _ToDType[ScalarT] | None = None,
+        keepdims: bool = False,
+    ) -> ndarray[_Shape, np.dtype[ScalarT]]: ...
+    @overload
+    def argmin(
+        self, axis: _Axis | None = None, out: None = None, dtype: DTypeLike | None = None, keepdims: bool = False
+    ) -> ndarray: ...
+    # can’t just use a single overload for `def reshape[*Ts: int]` and `Unpack[*Ts]` here
+    # since bounds for variadic type vars are not supported
+    @overload
+    def reshape(
+        self, shape: int, /, *, order: _Order = "C", copy: bool | None = None
+    ) -> ndarray[tuple[int], DTypeT]: ...
+    @overload
+    def reshape[NewShapeT: _Shape](
+        self, shape: NewShapeT, /, *, order: _Order = "C", copy: bool | None = None
+    ) -> ndarray[NewShapeT, DTypeT]: ...
+    @overload
+    def reshape(
+        self, size1: int, size2: int, /, *, order: _Order = "C", copy: bool | None = None
+    ) -> ndarray[tuple[int, int], DTypeT]: ...
+    @overload
+    def reshape(
+        self, size1: int, size2: int, size3: int, /, *, order: _Order = "C", copy: bool | None = None
+    ) -> ndarray[tuple[int, int, int], DTypeT]: ...
+    @overload
+    def reshape(
+        self,
+        size1: int,
+        size2: int,
+        size3: int,
+        size4: int,
+        /,
+        *shape: int,
+        order: _Order = "C",
+        copy: bool | None = None,
+    ) -> ndarray[tuple[int, int, int, int, *tuple[int, ...]], DTypeT]: ...
+    @overload
+    def squeeze(self: ndarray[tuple[int], DTypeT], axis: int) -> ndarray[tuple[()], DTypeT]: ...
+    @overload
+    def squeeze(self: ndarray[tuple[int, int], DTypeT], axis: int) -> ndarray[tuple[int], DTypeT]: ...
+    @overload
+    def squeeze(self: ndarray[tuple[int, int, int], DTypeT], axis: int) -> ndarray[tuple[int, int], DTypeT]: ...
+    @overload
     def squeeze(self, axis: int | None = None) -> ndarray[_Shape, DTypeT]: ...
     def ravel(self, order: Literal["C", "F", "A", "K"] = "C") -> ndarray[tuple[int], DTypeT]: ...
     def flatten(self, order: Literal["C", "F", "A", "K"] = "C") -> ndarray[tuple[int], DTypeT]: ...
     @property
     def flat(self) -> _FlatIter[DTypeT]: ...
     @overload
-    def sum(
+    def sum[OutT: ndarray](
+        self, axis: _Axis | None, dtype: DTypeLike | None, out: OutT, keepdims: bool = False
+    ) -> OutT: ...
+    @overload
+    def sum[OutT: ndarray](
+        self, axis: _Axis | None = None, dtype: DTypeLike | None = None, *, out: OutT, keepdims: bool = False
+    ) -> OutT: ...
+    @overload
+    def sum[ScalarT: _Scalar = _Scalar](
         self,
         axis: None = None,
-        dtype: DTypeLike | None = None,
+        dtype: _ToDType[ScalarT] | None = None,
         out: None = None,
         keepdims: Literal[False] = False,
-    ) -> ndarray[tuple[()]]: ...
+    ) -> ndarray[tuple[()], np.dtype[ScalarT]]: ...
+    @overload
+    def sum[ScalarT: _Scalar = _Scalar](
+        self,
+        axis: _Axis | None = None,
+        dtype: _ToDType[ScalarT] | None = None,
+        out: None = None,
+        *,
+        keepdims: Literal[True],
+    ) -> ndarray[ShapeT, np.dtype[ScalarT]]: ...
+    @overload
+    def sum[ScalarT: _Scalar = _Scalar](
+        self: ndarray[tuple[int]],
+        axis: int,
+        dtype: _ToDType[ScalarT] | None = None,
+        out: None = None,
+        keepdims: Literal[False] = False,
+    ) -> ndarray[tuple[()], np.dtype[ScalarT]]: ...
+    @overload
+    def sum[ScalarT: _Scalar = _Scalar](
+        self: ndarray[tuple[int, int]],
+        axis: int,
+        dtype: _ToDType[ScalarT] | None = None,
+        out: None = None,
+        keepdims: Literal[False] = False,
+    ) -> ndarray[tuple[int], np.dtype[ScalarT]]: ...
+    @overload
+    def sum[ScalarT: _Scalar = _Scalar](
+        self: ndarray[tuple[int, int, int]],
+        axis: int,
+        dtype: _ToDType[ScalarT] | None = None,
+        out: None = None,
+        keepdims: Literal[False] = False,
+    ) -> ndarray[tuple[int, int], np.dtype[ScalarT]]: ...
+    @overload
+    def sum[ScalarT: _Scalar = _Scalar](
+        self,
+        axis: _Axis | None = None,
+        dtype: _ToDType[ScalarT] | None = None,
+        out: None = None,
+        keepdims: bool = False,
+    ) -> ndarray[_Shape, np.dtype[ScalarT]]: ...
     @overload
     def sum(
-        self,
-        axis: int | None = None,
-        dtype: DTypeLike | None = None,
-        out: ndarray | None = None,
-        keepdims: bool = False,
+        self, axis: _Axis | None = None, dtype: DTypeLike | None = None, out: None = None, keepdims: bool = False
     ) -> ndarray: ...
 
 class _FlatIter[DTypeT: _DType = _DType]:
