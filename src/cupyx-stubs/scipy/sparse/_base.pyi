@@ -34,8 +34,10 @@ type _ToSparseOf[ScalarT: _SpScalar] = (
 )
 
 class _spbase[ScalarT: _SpScalar = _SpScalar]:
-    shape: tuple[int, int]
-    ndim: int
+    @property
+    def shape(self) -> tuple[int, int]: ...
+    @property
+    def ndim(self) -> int: ...
     @property
     def dtype(self) -> np.dtype[ScalarT]: ...  # property, so `ScalarT` stays covariant
     def toarray(

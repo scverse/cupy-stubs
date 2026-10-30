@@ -4,7 +4,12 @@ from typing_extensions import disjoint_base
 class _BaseStream:
     ptr: int
 
-class Stream(_BaseStream): ...
+class Stream(_BaseStream):
+    def __init__(
+        self, null: bool = False, non_blocking: bool = False, ptds: bool = False, priority: int | None = None
+    ) -> None: ...
+
+@disjoint_base
 class MemoryPointer: ...
 
 @disjoint_base

@@ -67,6 +67,13 @@ envs.hatch-test.overrides.matrix.deps.env-vars = [
   { value = "allow", key = "UV_PRERELEASE", if = [ "pre" ] },
 ]
 envs.hatch-test.dependency-groups = [ "test" ]
+envs.stubtest.dev-mode = false
+envs.stubtest.post-install-commands = [ "python ci/install-cupy.py" ]
+envs.stubtest.scripts.check = """\
+  python -m mypy.stubtest cupy cupyx --ignore-missing-stub --mypy-config-file=pyproject.toml \
+  --allowlist=ci/stubtest-allowlist.txt\
+  """
+envs.stubtest.dependency-groups = [ "test", "typecheck" ]
 
 [tool.ruff]
 line-length = 120
