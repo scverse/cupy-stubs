@@ -39,7 +39,15 @@ from ._manipulation.dims import broadcast_to as broadcast_to
 from ._manipulation.join import concatenate as concatenate
 from ._manipulation.join import stack as stack
 from ._manipulation.tiling import repeat as repeat
+from ._math.explog import exp as exp
+from ._math.explog import exp2 as exp2
+from ._math.explog import expm1 as expm1
+from ._math.explog import log as log
+from ._math.explog import log1p as log1p
 from ._math.explog import log2 as log2
+from ._math.explog import log10 as log10
+from ._math.explog import logaddexp as logaddexp
+from ._math.explog import logaddexp2 as logaddexp2
 from ._math.sumprod import cumsum as cumsum
 from ._math.sumprod import diff as diff
 from ._sorting.search import flatnonzero as flatnonzero

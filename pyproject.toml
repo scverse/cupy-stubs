@@ -46,6 +46,8 @@ typecheck = [ "mypy" ]
 version.source = "vcs"
 build.targets.wheel.packages = [ "src/cupy-stubs", "src/cupyx-stubs" ]
 build.targets.sdist.exclude = [ "/ci", "/docs", "/tests" ]
+# `*-stubs` aren’t importable names, so the default editable install would be empty
+build.targets.wheel.dev-mode-dirs = [ "src" ]
 envs.hatch-check-code.dependencies = [ "prek" ]
 envs.hatch-check-code.scripts.lint-check = "echo 'try `hatch check code --fix`'; false"
 envs.hatch-check-code.scripts.lint-fix = "prek run -a --no-group=format --no-group=typecheck"

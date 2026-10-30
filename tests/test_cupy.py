@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
 import sys
-from typing import TypeAlias
+from typing import TYPE_CHECKING, TypeAlias
 
 import h5py
 import numpy as np
@@ -15,6 +15,9 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import assert_type
 import cupy.cuda
+
+if TYPE_CHECKING:  # stub-only class
+    from cupy._core._kernel import _UFunc_Nin1_Nout1
 
 # `np.generic` etc. have `Any` type parameters
 Scalar: TypeAlias = (  # strings, as `np.dtype[A | B]` isn’t subscriptable at runtime
@@ -199,6 +202,24 @@ def test_ndarray_argmax(a: cp.ndarray) -> None:
     assert y.dtype == np.int64
 
 
+def test_ndarray_min(a: cp.ndarray) -> None:
+    x = a.min()
+    assert_type(x, cp.ndarray[tuple[()], np.dtype[Scalar]])
+    assert x.item() == 0
+    y = a.min(axis=0)
+    assert_type(y, cp.ndarray)
+    assert y.shape == (3,)
+
+
+def test_ndarray_argmin(a: cp.ndarray) -> None:
+    x = a.argmin()
+    assert_type(x, cp.ndarray[tuple[()], np.dtype[np.int64]])
+    assert x.item() == 0
+    y = a.argmin(axis=1)
+    assert_type(y, cp.ndarray[tuple[int, ...], np.dtype[np.int64]])
+    assert y.dtype == np.int64
+
+
 def test_ndarray_shape_methods(a: cp.ndarray) -> None:
     assert_type(a.reshape((3, 2)), cp.ndarray[tuple[int, int], np.dtype[Scalar]])
     assert a.reshape((3, 2)).shape == (3, 2)
@@ -271,8 +292,11 @@ def test_empty() -> None:
 
 def test_arange() -> None:
     x = cp.arange(0, 6, 2, dtype=np.float32)
-    assert_type(x, cp.ndarray[tuple[int], np.dtype[Scalar]])
+    assert_type(x, cp.ndarray[tuple[int], np.dtype[np.float32]])
     assert x.shape == (3,)
+    assert x.dtype == np.float32
+    assert_type(cp.arange(0, 6, 2, np.dtype(np.int16)), cp.ndarray[tuple[int], np.dtype[np.int16]])
+    assert_type(cp.arange(3, dtype="f4"), cp.ndarray[tuple[int], np.dtype[Scalar]])
     assert cp.arange(3).shape == (3,)
 
 
@@ -314,8 +338,14 @@ def test_asarray_zarr() -> None:
 
 def test_ascontiguousarray(a: cp.ndarray) -> None:
     x = cp.ascontiguousarray(a.T, dtype=np.float64)
-    assert_type(x, cp.ndarray)
+    assert_type(x, cp.ndarray[tuple[int, ...], np.dtype[np.float64]])
+    assert x.dtype == np.float64
+    assert_type(cp.ascontiguousarray(a, dtype="f8"), cp.ndarray)
     assert x.flags.c_contiguous
+    f32 = cp.zeros((2, 3), dtype=np.float32)
+    y = cp.ascontiguousarray(f32.T)
+    assert_type(y, cp.ndarray[tuple[int, ...], np.dtype[np.float32]])
+    assert y.dtype == np.float32
 
 
 def test_asnumpy(a: cp.ndarray) -> None:
@@ -350,7 +380,8 @@ def test_broadcast_to(a: cp.ndarray) -> None:
 
 def test_concatenate(a: cp.ndarray) -> None:
     x = cp.concatenate([a, a], axis=None, dtype=np.float64, casting="same_kind")
-    assert_type(x, cp.ndarray)
+    assert_type(x, cp.ndarray[tuple[int, ...], np.dtype[np.float64]])
+    assert x.dtype == np.float64
     assert x.shape == (12,)
     out = cp.ndarray((4, 3), dtype=np.float32)
     y = cp.concatenate((a, a), out=out)
@@ -372,11 +403,15 @@ def test_unique() -> None:
     assert_type(r, cp.ndarray | tuple[cp.ndarray, ...])
     assert isinstance(r, tuple)
     assert len(r) == 4
+    f32 = cp.zeros(3, dtype=np.float32)
+    assert_type(cp.unique(f32), cp.ndarray[tuple[int, ...], np.dtype[np.float32]])
+    assert cp.unique(f32).dtype == np.float32
 
 
 def test_stack(a: cp.ndarray) -> None:
     x = cp.stack([a, a], axis=1, dtype=np.float64, casting="same_kind")
-    assert_type(x, cp.ndarray)
+    assert_type(x, cp.ndarray[tuple[int, ...], np.dtype[np.float64]])
+    assert x.dtype == np.float64
     assert x.shape == (2, 2, 3)
     out = cp.ndarray((2, 2, 3), dtype=np.float32)
     y = cp.stack((a, a), out=out)
@@ -387,8 +422,12 @@ def test_repeat(a: cp.ndarray) -> None:
     x = cp.repeat(a, 2, axis=0)
     assert_type(x, cp.ndarray)
     assert x.shape == (4, 3)
-    assert cp.repeat(cp.arange(2), cp.asarray([1, 2])).shape == (3,)
+    assert cp.repeat(cp.arange(2), cp.asarray([1, 2]).ravel()).shape == (3,)
+    assert cp.repeat(cp.arange(2), cp.arange(3).max()).shape == (4,)
     assert cp.repeat(cp.arange(2), [1, 2]).shape == (3,)
+    f32 = cp.zeros(3, dtype=np.float32)
+    assert_type(cp.repeat(f32, 2), cp.ndarray[tuple[int, ...], np.dtype[np.float32]])
+    assert cp.repeat(f32, 2).dtype == np.float32
 
 
 def test_cumsum(a: cp.ndarray) -> None:
@@ -397,25 +436,58 @@ def test_cumsum(a: cp.ndarray) -> None:
     assert_type(x, cp.ndarray)
     assert x.shape == (2, 3)
     assert cp.cumsum(a, axis=None).shape == (6,)
+    y = cp.cumsum(a, 1, np.int16)
+    assert_type(y, cp.ndarray[tuple[int, ...], np.dtype[np.int16]])
+    assert y.dtype == np.int16
+    assert_type(cp.cumsum(a, dtype=np.float32), cp.ndarray[tuple[int, ...], np.dtype[np.float32]])
 
 
 def test_diff(a: cp.ndarray) -> None:
     x = cp.diff(a, n=1, axis=1, prepend=0, append=cp.zeros((2, 1), dtype=np.float32))
     assert_type(x, cp.ndarray)
     assert x.shape == (2, 4)
+    f32 = cp.zeros(3, dtype=np.float32)
+    assert_type(cp.diff(f32), cp.ndarray[tuple[int, ...], np.dtype[np.float32]])
+    assert cp.diff(f32).dtype == np.float32
 
 
 def test_log2(a: cp.ndarray) -> None:
     x = cp.log2(a + 1, out=None, dtype=np.float64, casting="same_kind")
-    assert_type(x, cp.ndarray)
+    assert_type(x, cp.ndarray[tuple[int, ...], np.dtype[np.float64]])
+    assert_type(cp.log2(2, dtype=np.float32), cp.ndarray[tuple[()], np.dtype[np.float32]])
     assert x.dtype == np.float64
-    assert isinstance(cp.log2(2.0), cp.ndarray)
+    y = cp.log2(cp.arange(3))
+    assert_type(y, cp.ndarray[tuple[int], np.dtype[Scalar]])
+    assert y.shape == (3,)
+    z = cp.log2(2.0)
+    assert_type(z, cp.ndarray[tuple[()], np.dtype[Scalar]])
+    assert z.shape == ()
     assert isinstance(cp.log2(np.float32(2)), cp.ndarray)
+    out = cp.zeros((2, 3), dtype=np.float32)
+    assert_type(cp.log2(cp.arange(1, 4, dtype=np.float32), out=out), cp.ndarray[tuple[int, ...], np.dtype[np.float32]])
+    assert out.shape == (2, 3)
     assert isinstance(cp.log2, cp.ufunc)
     assert_type(cp.log2.nin, int)
     assert cp.log2.nin == 1
     assert_type(cp.log2.nout, int)
     assert cp.log2.nout == 1
+
+
+@pytest.mark.parametrize("f", [cp.exp, cp.expm1, cp.exp2, cp.log, cp.log10, cp.log2, cp.log1p])
+def test_explog_nin1(f: "_UFunc_Nin1_Nout1") -> None:
+    assert (f.nin, f.nout) == (1, 1)
+    assert f(cp.arange(1, 4, dtype=np.float32)).shape == (3,)
+
+
+def test_logaddexp() -> None:
+    x = cp.logaddexp(cp.zeros((2, 1)), cp.zeros(3), dtype=np.float32)
+    assert_type(x, cp.ndarray[tuple[int, ...], np.dtype[np.float32]])
+    assert x.shape == (2, 3)
+    assert x.dtype == np.float32
+    y = cp.logaddexp2(1.0, cp.zeros(3))
+    assert_type(y, cp.ndarray)
+    assert y.shape == (3,)
+    assert (cp.logaddexp2.nin, cp.logaddexp2.nout) == (2, 1)
 
 
 def test_argsort(a: cp.ndarray) -> None:
@@ -435,9 +507,11 @@ def test_lexsort() -> None:
 
 def test_searchsorted() -> None:
     x = cp.searchsorted(cp.arange(5), cp.asarray([1, 3]), side="right", sorter=cp.arange(5))
-    assert_type(x, cp.ndarray)
+    assert_type(x, cp.ndarray[tuple[int, ...], np.dtype[np.int64]])
     assert x.get().tolist() == [2, 4]
-    assert cp.searchsorted(cp.arange(5), 2).item() == 2
+    y = cp.searchsorted(cp.arange(5), 2)
+    assert_type(y, cp.ndarray[tuple[()], np.dtype[np.int64]])
+    assert y.shape == ()
 
 
 def test_nonzero(a: cp.ndarray) -> None:
@@ -459,7 +533,7 @@ def test_where(a: cp.ndarray) -> None:
 
 
 def test_bincount() -> None:
-    x = cp.bincount(cp.asarray([0, 1, 1]), weights=cp.asarray([1.0, 2.0, 3.0]), minlength=4)
+    x = cp.bincount(cp.asarray([0, 1, 1]).ravel(), weights=cp.asarray([1.0, 2.0, 3.0]).ravel(), minlength=4)
     assert_type(x, cp.ndarray[tuple[int], np.dtype[Scalar]])
     assert x.get().tolist() == [1.0, 5.0, 0.0, 0.0]
 
@@ -469,8 +543,11 @@ def test_default_rng() -> None:
     assert_type(rng, cp.random.Generator)
     assert isinstance(rng, cp.random.Generator)
     x = rng.standard_normal(size=(2, 3), dtype=np.float32, out=None)
-    assert_type(x, cp.ndarray)
+    assert_type(x, cp.ndarray[tuple[int, ...], np.dtype[np.float32]])
     assert x.dtype == np.float32
+    y = rng.standard_normal(3)
+    assert_type(y, cp.ndarray[tuple[int, ...], np.dtype[np.float64]])
+    assert y.dtype == np.float64
 
 
 def test_device() -> None:

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from types import EllipsisType
 from typing import Literal, overload
 
@@ -40,7 +40,7 @@ class ndarray[ShapeT: _Shape = _Shape, DTypeT: _DType = _DType]:
         shape: int | Sequence[int],
         dtype: DTypeLike | None = ...,
         memptr: MemoryPointer | None = None,
-        strides: Sequence[int] | None = None,
+        strides: Iterable[int] | None = None,
         order: Literal["C", "F"] = "C",
     ) -> None: ...
     @property
@@ -132,6 +132,14 @@ class ndarray[ShapeT: _Shape = _Shape, DTypeT: _DType = _DType]:
     def argmax(self, axis: None = None) -> ndarray[tuple[()], np.dtype[np.int64]]: ...
     @overload
     def argmax(self, axis: int) -> ndarray[_Shape, np.dtype[np.int64]]: ...
+    @overload
+    def min(self, axis: None = None) -> ndarray[tuple[()], DTypeT]: ...
+    @overload
+    def min(self, axis: int) -> ndarray[_Shape, DTypeT]: ...
+    @overload
+    def argmin(self, axis: None = None) -> ndarray[tuple[()], np.dtype[np.int64]]: ...
+    @overload
+    def argmin(self, axis: int) -> ndarray[_Shape, np.dtype[np.int64]]: ...
     @overload
     def reshape(self, shape: int) -> ndarray[tuple[int], DTypeT]: ...
     @overload
