@@ -33,9 +33,12 @@ def a() -> cp.ndarray:
 
 def test_ndarray_init(a: cp.ndarray) -> None:
     x = cp.ndarray((2, 3), dtype=np.float32, strides=None, order="F")
-    assert_type(x, cp.ndarray)
+    assert_type(x, cp.ndarray[tuple[int, int], np.dtype[Scalar]])
     assert isinstance(x, cp.ndarray)
     assert x.shape == (2, 3)
+    assert_type(cp.ndarray(3), cp.ndarray[tuple[int], np.dtype[Scalar]])
+    assert cp.ndarray(3).shape == (3,)
+    assert_type(cp.ndarray([2, 3]), cp.ndarray)
 
     ptr = a.data
     assert_type(ptr, cupy.cuda.MemoryPointer)
@@ -300,8 +303,8 @@ def test_ndarray_flat(a: cp.ndarray) -> None:
 def test_ndarray_sum(a: cp.ndarray) -> None:
     out = cp.ndarray((3,), dtype=np.float64)
     x = a.sum(axis=0, dtype=np.float64, out=out, keepdims=False)
-    assert_type(x, cp.ndarray)
-    assert isinstance(x, cp.ndarray)
+    assert_type(x, cp.ndarray[tuple[int], np.dtype[Scalar]])
+    assert x is out
     total = a.sum()
     assert_type(total, cp.ndarray[tuple[()], np.dtype[Scalar]])
     assert total.shape == ()

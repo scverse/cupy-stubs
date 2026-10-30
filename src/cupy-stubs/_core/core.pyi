@@ -37,6 +37,25 @@ class ndarray[ShapeT: _Shape = _Shape, DTypeT: _DType = _DType]:
     flags: Flags
     nbytes: int
 
+    @overload
+    def __init__(
+        self: ndarray[tuple[int]],
+        shape: int,
+        dtype: DTypeLike | None = ...,
+        memptr: MemoryPointer | None = None,
+        strides: Iterable[int] | None = None,
+        order: Literal["C", "F"] = "C",
+    ) -> None: ...
+    @overload
+    def __init__(
+        self,
+        shape: ShapeT,
+        dtype: DTypeLike | None = ...,
+        memptr: MemoryPointer | None = None,
+        strides: Iterable[int] | None = None,
+        order: Literal["C", "F"] = "C",
+    ) -> None: ...
+    @overload
     def __init__(
         self,
         shape: int | Sequence[int],
