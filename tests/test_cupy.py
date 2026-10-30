@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: MPL-2.0
+import importlib
 import sys
+from collections.abc import Generator
 from typing import TYPE_CHECKING, TypeAlias
 
 import h5py
@@ -29,6 +31,16 @@ Scalar: TypeAlias = (  # strings, as `np.dtype[A | B]` isn’t subscriptable at 
 @pytest.fixture
 def a() -> cp.ndarray:
     return cp.asarray(np.arange(6, dtype=np.float32).reshape(2, 3))
+
+
+@pytest.fixture
+def no_accelerators() -> Generator[None, None, None]:
+    # `importlib`, as there’s no stub for `cupy._core._accelerator`
+    accelerator = importlib.import_module("cupy._core._accelerator")
+    prev = accelerator.get_routine_accelerators()
+    accelerator.set_routine_accelerators([])
+    yield
+    accelerator.set_routine_accelerators(prev)
 
 
 def test_ndarray_init(a: cp.ndarray) -> None:
@@ -220,6 +232,7 @@ def test_ndarray_argmax(a: cp.ndarray) -> None:
     assert z.shape == (2, 1)
 
 
+@pytest.mark.usefixtures("no_accelerators")  # CuPy’s CUB path for `min` swaps `out` and `dtype`
 def test_ndarray_min(a: cp.ndarray) -> None:
     x = a.min()
     assert_type(x, cp.ndarray[tuple[()], np.dtype[Scalar]])
