@@ -43,7 +43,7 @@ def coo(dense: cp.ndarray) -> cps.coo_matrix:
     return cps.coo_matrix(dense)
 
 
-def test_init(dense: cp.ndarray, csr: cps.csr_matrix) -> None:
+def test_init(csr: cps.csr_matrix) -> None:
     from_shape = cps.csr_matrix((2, 3), dtype=np.float64)
     assert from_shape.shape == (2, 3)
     from_scipy = cps.csc_matrix(sps.random(2, 3, format="csr", dtype=np.float32), copy=True)
