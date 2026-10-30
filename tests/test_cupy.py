@@ -60,7 +60,7 @@ def test_ndarray_attrs(a: cp.ndarray) -> None:
 
 
 def test_ndarray_get(a: cp.ndarray) -> None:
-    stream = cupy.cuda.Stream()
+    stream = cupy.cuda.Stream(null=False, non_blocking=True, ptds=False, priority=0)
     assert isinstance(stream, cupy.cuda.Stream)
     x = a.get(stream=stream, order="C", out=None, blocking=True)
     assert_type(x, np.ndarray[tuple[int, ...], np.dtype[Scalar]])

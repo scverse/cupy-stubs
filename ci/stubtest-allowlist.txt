@@ -1,0 +1,7 @@
+cupy\._core\.core\.ndarray\.__new__
+cupy\.cuda\.MemoryPointer\.__init__
+cupy\._core\.flags\.Flags\.__init__
+cupyx\.scipy\.sparse\._base\.spmatrix\.__init__
+cupyx\.scipy\.sparse\._base\._spbase\.__array__
+cupyx\.scipy\.sparse\._base\._spbase\.dtype
+cupyx\.scipy\.sparse\._compressed\._compressed_sparse_matrix\.(data|format)
