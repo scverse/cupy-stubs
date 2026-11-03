@@ -95,8 +95,8 @@ def test_compressed_attrs(csr: cps.csr_matrix) -> None:
     assert_type(csr.data, cp.ndarray[tuple[int], np.dtype[SpScalar]])
     assert isinstance(csr.data, cp.ndarray)
     for arr in (csr.indices, csr.indptr):
-        assert_type(arr, cp.ndarray[tuple[int], np.dtype[Scalar]])
-        assert isinstance(arr, cp.ndarray)
+        assert_type(arr, cp.ndarray[tuple[int], np.dtype[np.int32 | np.int64]])
+        assert arr.dtype.type in {np.int32, np.int64}
 
 
 def test_toarray(coo: cps.coo_matrix) -> None:
@@ -247,3 +247,130 @@ def test_isspmatrix(csr: cps.csr_matrix, csc: cps.csc_matrix) -> None:
 
     assert check(csr) == "csr"
     assert check(csc) == "csc"
+
+
+@pytest.fixture
+def csr_arr(dense: cp.ndarray) -> cps.csr_array:
+    return cps.csr_array(dense)
+
+
+def test_array_init(dense: cp.ndarray) -> None:
+    assert_type(cps.csr_array(dense, dtype=np.float64), "cps.csr_array[np.float64]")
+    x = cps.csc_array(sps.random_array((2, 3), format="csr", dtype=np.float32))
+    assert_type(x, "cps.csc_array[np.float32]")
+    assert isinstance(x, cps.sparray)
+    assert cps.coo_array(dense).format == "coo"
+
+
+def test_array_convert(csr_arr: cps.csr_array) -> None:
+    assert_type(csr_arr.tocsc(), cps.csc_array)
+    assert isinstance(csr_arr.tocsc(), cps.csc_array)
+    assert_type(cps.coo_array(csr_arr).tocsr(), cps.csr_array)
+    assert isinstance(cps.coo_array(csr_arr).tocsr(), cps.csr_array)
+    assert_type(csr_arr.astype(np.float64), "cps.csr_array[np.float64]")
+    assert isinstance(csr_arr.astype(np.float64), cps.csr_array)
+
+
+def test_array_get(csr_arr: cps.csr_array) -> None:
+    a: cps.sparray = csr_arr
+    assert_type(a.get(), "sps.sparray[SpScalar, tuple[int, int]]")
+    assert isinstance(a.get(), sps.sparray)
+    assert_type(csr_arr.get(), "sps.csr_array[SpScalar, tuple[int, int]]")
+    assert isinstance(csr_arr.get(), sps.csr_array)
+    assert_type(csr_arr.tocsc().get(), "sps.csc_array[SpScalar]")
+    assert isinstance(csr_arr.tocsc().get(), sps.csc_array)
+    assert_type(cps.coo_array(csr_arr).get(), "sps.coo_array[SpScalar, tuple[int, int]]")
+    assert isinstance(cps.coo_array(csr_arr).get(), sps.coo_array)
+
+
+def test_array_ops(csr_arr: cps.csr_array) -> None:
+    square = cps.csc_array(cp.full((2, 2), 2.0, dtype=np.float32))
+    assert_type(square @ square, cps.csr_array)
+    assert isinstance(square @ square, cps.csr_array)
+    n: int = 2
+    assert_type(square**n, "cps.csc_array[np.float32]")  # element-wise
+    assert (square**n).toarray()[0, 0].item() == 4
+    x = csr_arr.sum(axis=0)
+    assert_type(x, cp.ndarray[tuple[int], np.dtype[Scalar]])
+    assert x.shape == (3,)
+
+
+def test_array_stack(csr: cps.csr_matrix, csr_arr: cps.csr_array) -> None:
+    assert_type(cps.hstack([csr_arr, csr_arr]), cps.sparray)
+    mixed: list[cps.csr_matrix | cps.csr_array] = [csr, csr_arr]
+    x = cps.vstack(mixed)
+    assert_type(x, cps.spmatrix | cps.sparray)
+    assert isinstance(x, cps.sparray)
+
+
+def test_isspmatrix_vs_array(csr: cps.csr_matrix, csr_arr: cps.csr_array) -> None:
+    def check(x: cps.csr_matrix | cps.csr_array) -> bool:
+        if cps.isspmatrix(x):
+            assert_type(x, cps.csr_matrix)
+            return True
+        assert_type(x, cps.csr_array)
+        return False
+
+    assert check(csr)
+    assert not check(csr_arr)
+    assert cps.issparse(csr_arr)
+
+
+@pytest.fixture
+def vec() -> cp.ndarray[tuple[int], np.dtype[np.float32]]:
+    return cp.arange(3, dtype=np.float32)
+
+
+def test_array_1d_init(vec: cp.ndarray[tuple[int], np.dtype[np.float32]]) -> None:
+    x = cps.csr_array(vec)
+    assert_type(x, "cps.csr_array[np.float32, tuple[int]]")
+    assert_type(x.shape, tuple[int])
+    assert x.shape == (3,)
+    y = cps.coo_array((vec, (cp.arange(3),)), shape=(3,))
+    assert_type(y, "cps.coo_array[np.float32, tuple[int]]")
+    assert y.shape == (3,)
+    z = cps.csr_array((x.data, x.indices, x.indptr), shape=(3,))
+    assert_type(z, "cps.csr_array[np.float32, tuple[int]]")
+    assert z.shape == (3,)
+    assert_type(cps.coo_array((5,)), "cps.coo_array[SpScalar, tuple[int]]")
+    assert_type(cps.csr_array((2, 3)), cps.csr_array)
+    assert_type(cps.csr_matrix(vec), "cps.csr_matrix[np.float32]")  # a row
+    assert cps.csr_matrix(vec).shape == (1, 3)
+
+
+def test_array_1d_ops(vec: cp.ndarray[tuple[int], np.dtype[np.float32]], csr_arr: cps.csr_array) -> None:
+    x = cps.csr_array(vec)
+    assert_type(x.toarray(), cp.ndarray[tuple[int], np.dtype[np.float32]])
+    assert x.toarray().shape == (3,)
+    assert_type(x.tocsr(), "cps.csr_array[np.float32, tuple[int]]")
+    assert_type(cps.coo_array(vec).tocsr(), "cps.csr_array[np.float32, tuple[int]]")
+    assert cps.coo_array(vec).tocsr().shape == (3,)
+    assert_type(x.get(), "sps.csr_array[np.float32, tuple[int]]")
+    assert x.get().shape == (3,)
+    assert_type(x.sum(axis=0), "cp.ndarray[tuple[()]]")
+    assert x.sum(axis=0).shape == ()
+    assert_type(x @ x, "cp.ndarray[tuple[()]]")  # dot
+    assert (x @ x).item() == 5
+    assert_type(csr_arr @ x, "cps.coo_array[SpScalar, tuple[int]]")
+    assert (csr_arr @ x).shape == (2,)
+    sq = cps.csr_array(cp.full((3, 3), 1.0, dtype=np.float32))
+    assert_type(x @ sq, "cps.coo_array[SpScalar, tuple[int]]")
+    assert (x @ sq).shape == (3,)
+
+
+def test_array_getitem(vec: cp.ndarray[tuple[int], np.dtype[np.float32]], csr_arr: cps.csr_array) -> None:
+    x = cps.csr_array(vec)
+    assert_type(x[0], cp.ndarray[tuple[()], np.dtype[np.float32]])
+    assert x[0].shape == ()
+    assert_type(x[1:], "cps.csr_array[np.float32, tuple[int]]")
+    assert x[1:].shape == (2,)
+    assert_type(csr_arr[0, 1], cp.ndarray[tuple[()], np.dtype[SpScalar]])
+    assert csr_arr[0, 1].shape == ()
+    row = csr_arr[0]
+    assert_type(row, "cps.coo_array[SpScalar, tuple[int]]")
+    assert isinstance(row, cps.coo_array)
+    assert row.shape == (3,)
+    assert_type(csr_arr[:, 1], "cps.coo_array[SpScalar, tuple[int]]")
+    assert csr_arr[:, 1].shape == (2,)
+    assert_type(csr_arr[:1], cps.csr_array)
+    assert csr_arr[:1].shape == (1, 3)
