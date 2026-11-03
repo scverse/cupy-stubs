@@ -347,9 +347,9 @@ def test_array_1d_ops(vec: cp.ndarray[tuple[int], np.dtype[np.float32]], csr_arr
     assert cps.coo_array(vec).tocsr().shape == (3,)
     assert_type(x.get(), "sps.csr_array[np.float32, tuple[int]]")
     assert x.get().shape == (3,)
-    assert_type(x.sum(axis=0), cp.ndarray[tuple[()]])
+    assert_type(x.sum(axis=0), "cp.ndarray[tuple[()]]")
     assert x.sum(axis=0).shape == ()
-    assert_type(x @ x, cp.ndarray[tuple[()]])  # dot
+    assert_type(x @ x, "cp.ndarray[tuple[()]]")  # dot
     assert (x @ x).item() == 5
     assert_type(csr_arr @ x, "cps.coo_array[SpScalar, tuple[int]]")
     assert (csr_arr @ x).shape == (2,)
