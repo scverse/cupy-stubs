@@ -23,7 +23,7 @@ Most functions return an unknown shape (`ndarray[tuple[int, ...], ...]`),
 but some parameters require a specific number of dimensions,
 e.g. `cupy.bincount` only accepts 1D arrays.
 
-Checking `arr.shape` or `arr.ndim` doesn't change the type of `arr`.
+Checking `arr.shape` or `arr.ndim` doesn’t change the type of `arr`.
 To get a 1D array, flatten it (no copy for contiguous arrays):
 
 ```python
