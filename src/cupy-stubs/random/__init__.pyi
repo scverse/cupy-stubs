@@ -6,3 +6,4 @@ import numpy as np
 from ._generator_api import Generator as Generator
 
 def default_rng(seed: int | Sequence[int] | np.random.SeedSequence | Generator | None = None) -> Generator: ...
+def seed(seed: int | Sequence[int] | None = None) -> None: ...   # legacy global RandomState seeding
