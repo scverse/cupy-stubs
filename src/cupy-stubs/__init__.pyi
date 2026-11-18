@@ -82,3 +82,13 @@ def asnumpy(
 # Returns the numpy or cupy module owning *args (cupy if any arg is a
 # cupy.ndarray; numpy for scalars/lists). See cupy's own docs.
 def get_array_module(*args: object) -> ModuleType: ...
+
+# src is a cupy ndarray or a scalar: cupy rejects nonscalar numpy arrays here
+# ("non-scalar numpy.ndarray cannot be used for copyto"), hence no ArrayLike.
+def copyto(
+    dst: ndarray,
+    src: ndarray | complex,
+    *,
+    casting: Literal["no", "equiv", "safe", "same_kind", "unsafe"] = "same_kind",
+    where: ndarray | bool = True,
+) -> None: ...
