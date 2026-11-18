@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
-from typing import Literal, overload
+from types import ModuleType
+from typing import Any, Literal, overload
 
 from numpy import bool_ as bool_
 from numpy import complex64 as complex64
@@ -77,3 +78,7 @@ def asnumpy(
     *,
     blocking: bool = True,
 ) -> _NDArray[_Generic]: ...
+
+# Returns the numpy or cupy module owning *args (cupy if any arg is a
+# cupy.ndarray; numpy for scalars/lists). See cupy's own docs.
+def get_array_module(*args: Any) -> ModuleType: ...
