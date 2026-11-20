@@ -1,16 +1,18 @@
 # SPDX-License-Identifier: MPL-2.0
 from typing import Literal, overload
 
+import numpy as np
 import scipy.sparse as sps
 from numpy.typing import DTypeLike
 from typing_extensions import Self, TypeIs, override
 
 import cupy.cuda
+from cupy import ndarray
 
-from ._base import _SpScalar, _ToDType, spmatrix
+from ._base import _2D, _Index, _NonIntIndex, _SpScalar, _ToDType, sparray, spmatrix
 from ._compressed import _compressed_sparse_matrix
 
-class csc_matrix[ScalarT: _SpScalar = _SpScalar](spmatrix[ScalarT], _compressed_sparse_matrix[ScalarT]):
+class csc_matrix[ScalarT: _SpScalar = _SpScalar](spmatrix[ScalarT], _compressed_sparse_matrix[ScalarT, _2D]):
     @property
     @override
     def format(self) -> Literal["csc"]: ...
@@ -28,5 +30,29 @@ class csc_matrix[ScalarT: _SpScalar = _SpScalar](spmatrix[ScalarT], _compressed_
     def power[NewScalarT: _SpScalar](self, n: int, dtype: _ToDType[NewScalarT]) -> csc_matrix[NewScalarT]: ...
     @overload
     def power(self, n: int, dtype: DTypeLike) -> csc_matrix: ...
+    @overload
+    def __getitem__(self, key: tuple[int, int]) -> ndarray[tuple[()], np.dtype[ScalarT]]: ...
+    @overload
+    def __getitem__(self, key: _Index | tuple[_NonIntIndex, _Index] | tuple[int, _NonIntIndex]) -> Self: ...
+    def __setitem__(self, key: _Index | tuple[_Index, _Index], x: object) -> None: ...
+
+class csc_array[ScalarT: _SpScalar = _SpScalar](sparray[ScalarT, _2D], _compressed_sparse_matrix[ScalarT, _2D]):
+    @property
+    @override
+    def format(self) -> Literal["csc"]: ...
+    @override
+    def get(self, stream: cupy.cuda.Stream | None = None) -> sps.csc_array[ScalarT]: ...
+    @overload
+    def astype[NewScalarT: _SpScalar](
+        self, dtype: _ToDType[NewScalarT], copy: bool = True
+    ) -> csc_array[NewScalarT]: ...
+    @overload
+    def astype(self, dtype: DTypeLike | None, copy: bool = True) -> csc_array: ...
+    @overload
+    def power(self, n: int, dtype: None = None) -> Self: ...
+    @overload
+    def power[NewScalarT: _SpScalar](self, n: int, dtype: _ToDType[NewScalarT]) -> csc_array[NewScalarT]: ...
+    @overload
+    def power(self, n: int, dtype: DTypeLike) -> csc_array: ...
 
 def isspmatrix_csc(x: object) -> TypeIs[csc_matrix]: ...
