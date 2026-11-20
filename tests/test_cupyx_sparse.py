@@ -128,8 +128,8 @@ def test_transpose(coo: cps.coo_matrix, csr: cps.csr_matrix, csc: cps.csc_matrix
     assert isinstance(csr.T, cps.csc_matrix)
     assert_type(csc.T, cps.csr_matrix)
     assert isinstance(csc.T, cps.csr_matrix)
-    assert_type(csr.transpose(copy=True), cps.csc_matrix)
-    assert isinstance(csr.transpose(copy=True), cps.csc_matrix)
+    assert_type(csr.transpose(axes=None, copy=True), cps.csc_matrix)
+    assert isinstance(csr.transpose(axes=None, copy=True), cps.csc_matrix)
     assert csr.T.shape == csr.shape[::-1]
 
 
