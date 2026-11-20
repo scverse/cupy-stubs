@@ -121,6 +121,18 @@ def test_convert(coo: cps.coo_matrix) -> None:
     assert isinstance(coo.tocsc(copy=True), cps.csc_matrix)
 
 
+def test_transpose(coo: cps.coo_matrix, csr: cps.csr_matrix, csc: cps.csc_matrix) -> None:
+    assert_type(coo.T, cps.coo_matrix)
+    assert isinstance(coo.T, cps.coo_matrix)
+    assert_type(csr.T, cps.csc_matrix)
+    assert isinstance(csr.T, cps.csc_matrix)
+    assert_type(csc.T, cps.csr_matrix)
+    assert isinstance(csc.T, cps.csr_matrix)
+    assert_type(csr.transpose(axes=None, copy=True), cps.csc_matrix)
+    assert isinstance(csr.transpose(axes=None, copy=True), cps.csc_matrix)
+    assert csr.T.shape == csr.shape[::-1]
+
+
 @pytest.fixture
 def square() -> cps.csc_matrix:
     return cps.csc_matrix(cp.full((2, 2), 1.0, dtype=np.float32))

@@ -9,6 +9,7 @@ import cupy.cuda
 
 from ._base import _SpScalar, _ToDType, spmatrix
 from ._compressed import _compressed_sparse_matrix
+from ._csc import csc_matrix
 
 class csr_matrix[ScalarT: _SpScalar = _SpScalar](spmatrix[ScalarT], _compressed_sparse_matrix[ScalarT]):
     @property
@@ -16,6 +17,11 @@ class csr_matrix[ScalarT: _SpScalar = _SpScalar](spmatrix[ScalarT], _compressed_
     def format(self) -> Literal["csr"]: ...
     @override
     def get(self, stream: cupy.cuda.Stream | None = None) -> sps.csr_matrix[ScalarT]: ...
+    @override
+    def transpose(self, axes: None = None, copy: bool = False) -> csc_matrix[ScalarT]: ...
+    @property
+    @override
+    def T(self) -> csc_matrix[ScalarT]: ...
     @overload
     def astype[NewScalarT: _SpScalar](
         self, dtype: _ToDType[NewScalarT], copy: bool = True

@@ -3,7 +3,7 @@ from typing import Literal, overload
 
 import scipy.sparse as sps
 from numpy.typing import DTypeLike
-from typing_extensions import override
+from typing_extensions import Self, override
 
 import cupy.cuda
 
@@ -44,3 +44,8 @@ class coo_matrix[ScalarT: _SpScalar = _SpScalar](spmatrix[ScalarT]):
     def format(self) -> Literal["coo"]: ...
     @override
     def get(self, stream: cupy.cuda.Stream | None = None) -> sps.coo_matrix[ScalarT]: ...
+    @override
+    def transpose(self, axes: None = None, copy: bool = False) -> Self: ...
+    @property
+    @override
+    def T(self) -> Self: ...
