@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
+from types import ModuleType
 from typing import Literal, overload
 
 from numpy import bool_ as bool_
@@ -77,3 +78,17 @@ def asnumpy(
     *,
     blocking: bool = True,
 ) -> _NDArray[_Generic]: ...
+
+# Returns the numpy or cupy module owning *args (cupy if any arg is a
+# cupy.ndarray; numpy for scalars/lists). See cupy's own docs.
+def get_array_module(*args: object) -> ModuleType: ...
+
+# src is a cupy ndarray or a scalar: cupy rejects nonscalar numpy arrays here
+# ("non-scalar numpy.ndarray cannot be used for copyto"), hence no ArrayLike.
+def copyto(
+    dst: ndarray,
+    src: ndarray | complex,
+    *,
+    casting: Literal["no", "equiv", "safe", "same_kind", "unsafe"] = "same_kind",
+    where: ndarray | bool = True,
+) -> None: ...
