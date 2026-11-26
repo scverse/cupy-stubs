@@ -1,7 +1,8 @@
 name: Test
 
 # Runs on a GPU runner provisioned by Cirun (see `.cirun.yml`).
-# To save costs, PRs only run when they have the `run-gpu-ci` label.
+# To save costs, PRs only run when they have the `run-gpu-ci` label,
+# or when Dependabot opens them.
 on:
   push:
     branches: [main]
@@ -12,7 +13,8 @@ on:
       - synchronize
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # Dependabot adds its labels right after `opened`: those `labeled` events must not cancel the run.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}${{ github.event.action == 'labeled' && github.event.label.name != 'run-gpu-ci' && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: true
 
 permissions:
@@ -26,11 +28,18 @@ env:
 jobs:
   check-label:
     name: Check Label
+    # skip (not fail) for unrelated labels, e.g. the ones Dependabot adds, so they don’t turn the PR red
+    if: github.event.action != 'labeled' || github.event.label.name == 'run-gpu-ci'
     runs-on: ubuntu-slim
     steps:
-      - uses: flying-sheep/check@e10bb11109d1434ab16729bd988d78d65d47e163 # v1.0.5
+      - uses: flying-sheep/check@v1.0.5
         with:
-          success: ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'run-gpu-ci') }}
+          success: >-
+            ${{
+              github.event_name == 'push' ||
+              contains(github.event.pull_request.labels.*.name, 'run-gpu-ci') ||
+              (github.event.action == 'opened' && github.event.pull_request.user.login == 'dependabot[bot]')
+            }}
 
   test:
     name: GPU Tests
@@ -38,14 +47,14 @@ jobs:
     runs-on: "cirun-aws-gpu--${{ github.run_id }}"
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           filter: blob:none
           fetch-depth: 0
           persist-credentials: false
       - name: Check NVIDIA SMI
         run: nvidia-smi
-      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+      - uses: astral-sh/setup-uv@v10.4.0
         with:
           enable-cache: true # "auto" is `false` on non-GitHub runners
       - name: Run tests in all hatch environments
@@ -57,7 +66,7 @@ jobs:
   remove-label:
     name: Remove “run-gpu-ci” Label
     needs: test
-    if: always() && github.event_name == 'pull_request'
+    if: always() && contains(github.event.pull_request.labels.*.name, 'run-gpu-ci')
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
